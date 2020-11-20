@@ -70,3 +70,5 @@ txt.text = "Yeet Yote";
 txt.font = "64px Arial";
 txt.textColor = new Color(255);
 ```
+## Sample Output
+![Screenshot](https://nubstoys.xyz/game_framework_dev/example_code.png)
