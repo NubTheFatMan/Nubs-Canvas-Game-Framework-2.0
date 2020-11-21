@@ -5,7 +5,7 @@ A game framework for an HTML canvas. Very early in development. This is a rewrit
 This is not a final product, everything is subject to change. It is also lacking in major key features.
 
 # Installation
-1. Downlaod `nub_game_framework.js`.
+1. Downlaod `nubs_game_framework.js`.
 2. In the HTML file where you have your canvas, add `<script src="nubs_game_framework.js"></script>` in the header.
 3. Make a new JavaScript file in the directory your HTML file is located.
 4. In the body, after you make the canvas element, add `<script scr="game.js"></script>`, however you need to replace `game.js` with whatever you named the file.
