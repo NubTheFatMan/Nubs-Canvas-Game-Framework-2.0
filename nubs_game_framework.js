@@ -64,6 +64,9 @@ class Vector {
         return new this(this[0], this[1]);
     }
 
+    get array() {return [this[0], this[1]];}
+    get object() {return {x: this[0], y: this[1]};}
+
     static add(a, b) {
         if (!(a instanceof Vector)) throw new Error("Vector.add: bad argument #1: Expected a Vector, got " + typeof a);
         if (!(b instanceof Vector)) throw new Error("Vector.add: bad argument #2: Expected a Vector, got " + typeof b);
@@ -186,6 +189,12 @@ class Color {
     get g() {return this[1];}
     get b() {return this[2];}
     get a() {return this[3];}
+
+    get red()   {return this[0];}
+    get green() {return this[1];}
+    get blue()  {return this[2];}
+    get alpha() {return this[3];}
+
     get rgba() {return "rgba(" + [this[0], this[1], this[2], this[3]].join(',') + ")";}
     get rgb()  {return "rgb(" + [this[0], this[1], this[2]].join(',') + ")";}
 
@@ -203,6 +212,10 @@ class Color {
         return "#" + r + g + b + a;
     }
 
+    get array() {return [this[0], this[1], this[2], this[3]];}
+    get object() {return {r: this[0], g: this[1], b: this[2], a: this[3], red: this[0], green: this[1], blue: this[2], alpha: this[3]};}
+    get copy() {return new this(this[0], this[1], this[2], this[3]);}
+
     set r(r) {
         if (typeof r !== "number") throw new Error("The value of red must be a number.");
         this[0] = r;
@@ -219,6 +232,11 @@ class Color {
         if (typeof a !== "number") throw new Error("The value of alpha must be a number.");
         this[3] = a;
     };
+
+    set red(r)   {this.r = r;}
+    set green(g) {this.g = g;}
+    set blue(b)  {this.b = b;}
+    set alpha(a) {this.a = a;}
 
     set hex(hex) {
         if (typeof hex !== "string") throw new Error("The value of your input hex must be a string.");
@@ -388,7 +406,9 @@ function setCanvas(id) {
             - Box
                 ✓ Button
                 CheckBox
+                DropDownMenu
                 TextEntry
+                Slider
                 - Img
                     SpriteSheet
             ✓ Text
@@ -406,6 +426,7 @@ function setCanvas(id) {
 class Entity {
     constructor () {
         this.id = ngf.entCount++;
+        this.enabled = true;
         ngf.entities.set(this.id, this);
     }
 }
@@ -417,6 +438,7 @@ class Graphic extends Entity {
         this.color = new Color(255);
         this.visible = true;
         this.enabled = true;
+        this.drawFromOrigin = false;
 
         // Copy data to this
         Object.assign(this, data);
@@ -478,14 +500,14 @@ class Box extends Graphic {
         if (typeof this.cornerRadius !== "number") this.cornerRadius = 0;
     }
     
-    draw() {
+    draw(w, h) {
         ngf.context.fillStyle = this.color.rgba;
 
         // If the corner radius is 0, we don't need to waste time tracing a path and just fill a rectangle
         if (this.cornerRadius === 0) {
-            ngf.context.fillRect(this.pos[0], this.pos[1], this.size[0], this.size[1]);
+            ngf.context.fillRect(0, 0, w, w);
         } else {
-            let [x, y, w, h] = [this.pos[0], this.pos[1], this.size[0], this.size[1]];
+            let [x, y] = [0, 0];
             ngf.context.beginPath();
             ngf.context.moveTo(x, y + this.cornerRadius);                                          // Move to the top left corner
             ngf.context.lineTo(x, y + h - this.cornerRadius);                                      // Trace a line to the bottom left corner
@@ -510,17 +532,17 @@ class Button extends Box {
         if (typeof this.font !== "string") this.font = "16px Arial";
         if (!(this.textColor instanceof Color)) this.textColor = new Color();
     }
-    draw() {
-        super.draw();
+    draw(w, h) {
+        super.draw(w, h);
 
         ngf.context.font = this.font;
         ngf.context.fillStyle = this.textColor.rgba;
 
         // For some reason, measureText only gets the width, so we have to calculate the height by checking the font for a number
-        let w = ngf.context.measureText(this.text).width;
-        let h = Number(ngf.context.font.match(/[0-9]+/g)[0]) || 0;
+        let wid = ngf.context.measureText(this.text).width;
+        let hei = Number(ngf.context.font.match(/[0-9]+/g)[0]) || 0;
 
-        ngf.context.fillText(this.text, this.pos[0] + (this.size[0]/2) - w/2, this.pos[1] + (this.size[1]/2) + h/3);
+        ngf.context.fillText(this.text, (w/2) - wid/2, (h/2) + hei/3);
     }
 }
 
@@ -538,9 +560,9 @@ class Img extends Box {
         }
     }
 
-    draw() {
+    draw(w, h) {
         if (this._image) {
-            ngf.context.drawImage(this._image, this.pos[0], this.pos[1], this.size[0], this.size[1]);
+            ngf.context.drawImage(this._image, 0, 0, w, h);
         }
     }
 }
@@ -556,7 +578,7 @@ class Text extends Graphic {
     draw() {
         ngf.context.font = this.font;
         ngf.context.fillStyle = this.textColor.rgba;
-        ngf.context.fillText(this.text, this.pos[0], this.pos[1] + Number(ngf.context.font.match(/[0-9]+/g)[0]));
+        ngf.context.fillText(this.text, 0, Number(ngf.context.font.match(/[0-9]+/g)[0]));
     }
 }
 
@@ -565,6 +587,7 @@ class Circle extends Graphic {
         super(data);
 
         if (typeof this.radius !== "number") this.radius = 16;
+        this.drawFromOrigin = true;
     }
     draw() {
         ngf.context.fillStyle = this.color.rgba;
@@ -599,7 +622,7 @@ class Poly extends Graphic {
     constructor(data) {
         super(data);
 
-        if (!(this.points instanceof Array)) this.points = [new Vector(4), new Vector(16), new Vector(4, 16)];
+        if (!(this.points instanceof Array)) this.points = [];
     }
     draw() {
         ngf.context.fillStyle = this.color.rgba;
@@ -623,8 +646,12 @@ class Poly extends Graphic {
 }
 
 
+ngf.frameRenderTime = [];
+ngf.averageFrameRenderTime = 0;
+
 // Rendering
 function drawFrame() {
+    let startTime = Date.now();
     if (ngf.context) { // We can only render if there is a context, however we don't want to error if it's not set
         ngf.context.clearRect(0, 0, ngf.canvas.width, ngf.canvas.height);
         
@@ -632,14 +659,64 @@ function drawFrame() {
         ngf.context.fillStyle = "rgb(0,0,0)";
         ngf.context.fillRect(0, 0, ngf.canvas.width, ngf.canvas.height);
 
-
         // Loop through all entities and call .draw
         ngf.entities.forEach((ent, id, map) => {
             if (ent instanceof Graphic) { // Only draw if it's a graphic entity
-                if (ent.visible && ent.draw instanceof Function) ent.draw();
+                if (ent.visible && ent.draw instanceof Function) {
+                    ngf.context.save();
+
+                    // Only transform the canvas if it's not drawing from 0, 0
+                    if (typeof ent.drawFromOrigin === "boolean" && !ent.drawFromOrigin) {
+                        // We want `Graphic.draw()` to be drawn from 0, 0
+                        let [x, y] = [ent.pos[0], ent.pos[1]];
+
+                        // Circles draw from the center
+                        if (typeof ent.radius === "number") {
+                            x -= ent.radius;
+                            y -= ent.radius;
+                        }
+
+                        let r = 0;
+                        if (typeof ent.angle === "number") {
+                            if (typeof ent.useRadians === "boolean" && ent.useRadians) r = ent.angle;
+                            else r = ent.angle * Math.PI / 180;
+                        }
+                        
+                        if (x !== 0 || y !== 0) ngf.context.translate(x, y);
+                        if (r !== 0) ngf.context.rotate(r);
+
+                        if (ent.size instanceof Vector) {
+                            ngf.context.rect(0, 0, ent.size[0], ent.size[1]);
+                            ngf.context.clip();
+                        } else if (typeof ent.radius === "number") {
+                            ngf.context.rect(0, 0, ent.radius, ent.radius);
+                        }
+                    }
+
+                    let [w, h] = [0, 0];
+                    if (ent.size instanceof Vector) {
+                        [w, h] = [ent.size[0], ent.size[1]];
+                    } else if (ent.radius) {
+                        [w, h] = [ent.radius, ent.radius];
+                    }
+
+                    ent.draw(w, h);
+
+                    ngf.context.restore();
+                }
             }
         });
     }
+
+    let endTime = Date.now();
+    ngf.frameRenderTime.push(endTime - startTime);
+    if (ngf.frameRenderTime.length > 5) ngf.frameRenderTime.splice(0, 1);
+    
+    let sum = 0;
+    for (let i = 0; i < ngf.frameRenderTime.length; i++) {
+        sum += ngf.frameRenderTime[i];
+    }
+    ngf.averageFrameRenderTime = sum/ngf.frameRenderTime.length;
 
     // Start the next frame
     if (ngf.fps > 0) {
