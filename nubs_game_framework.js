@@ -171,18 +171,69 @@ class Vector {
     }
 }
 
+function hexToRGBA(hex) {
+    if (typeof hex !== "string") throw new Error("The value of your input hex must be a string.");
+    hex = hex.replace(/#/g, '');
+
+    let out = [];
+
+    switch (hex.length) {
+        // #rgb(a)
+        case 3: case 4: {
+            out.push(parseInt(hex[0] + hex[0], 16));
+            out.push(parseInt(hex[1] + hex[1], 16));
+            out.push(parseInt(hex[2] + hex[2], 16));
+            if (hex[3]) out.push(parseInt(hex[3] + hex[3], 16));
+        } break;
+
+        // #rrggbb(aa)
+        case 6: case 8: {
+            out.push(parseInt(hex.substring(0, 2), 16));
+            out.push(parseInt(hex.substring(2, 4), 16));
+            out.push(parseInt(hex.substring(4, 6), 16));
+            if (hex[7]) out.push(parseInt(hex.substring(6, 8), 16));
+        } break;
+
+        default: {
+            throw new Error("hexToRGBA: Bad argument #1: Invalid hexadecimal specified.");
+        } break;
+    }
+
+    return out;
+}
+
 // Colors, used for coloring entities.
 // Since the usage would be a bit length, please see [not yet created]
 class Color {
     constructor (r = 0, g = r, b = r, a = 255) {
-        if (typeof r !== "number") throw new Error("Color: bad argument #1: expected a number, got " + typeof r);
-        if (typeof g !== "number") g = r;
-        if (typeof b !== "number") b = r;
-        if (typeof a !== "number") a = 255;
-        this[0] = r;
-        this[1] = g;
-        this[2] = b;
-        this[3] = a;
+        let [red, green, blue, alpha] = [0, 0, 0, 255];
+        switch (typeof r) {
+            case "number":
+                if (typeof g !== "number") throw new Error("Color: Bad argument #2: Expected a number, got " + typeof g);
+                if (typeof b !== "number") throw new Error("Color: Bad argument #3: Expected a number, got " + typeof b);
+                if (typeof a !== "number") throw new Error("Color: Bad argument #4: Expected a number, got " + typeof a);
+                red   = r;
+                green = g;
+                blue  = b;
+                alpha = a;
+            break;
+
+            case "string":
+                let col = hexToRGBA(r);
+                red   = col[0];
+                green = col[1];
+                blue  = col[2];
+                if (col[3] !== undefined) alpha = col[3];
+            break;
+
+            default:
+                throw new Error("Color: Bad argument #1: Expected a string or number, got " + typeof r);
+            break;
+        }
+        this[0] = red;
+        this[1] = green;
+        this[2] = blue;
+        this[3] = alpha;
         this.length = 4; // Allow looping if necessary
     }
     get r() {return this[0];}
@@ -239,30 +290,11 @@ class Color {
     set alpha(a) {this.a = a;}
 
     set hex(hex) {
-        if (typeof hex !== "string") throw new Error("The value of your input hex must be a string.");
-        hex = hex.replace(/#/g, '');
-
-        switch (hex.length) {
-            // #rgb(a)
-            case 3: case 4: {
-                this[0] = parseInt(hex[0] + hex[0], 16);
-                this[1] = parseInt(hex[1] + hex[1], 16);
-                this[2] = parseInt(hex[2] + hex[2], 16);
-                if (hex[3]) this[3] = parseInt(hex[3] + hex[3], 16);
-            } break;
-
-            // #rrggbb(aa)
-            case 6: case 8: {
-                this[0] = parseInt(hex.substring(0, 2), 16);
-                this[1] = parseInt(hex.substring(2, 4), 16);
-                this[2] = parseInt(hex.substring(4, 6), 16);
-                if (hex[7]) this[3] = parseInt(hex.substring(6, 8), 16);
-            } break;
-
-            default: {
-                throw new Error("Invalid hexadecimal specified.");
-            } break;
-        }
+        let col = hexToRGBA(hex);
+        this[0] = col[0];
+        this[1] = col[1];
+        this[2] = col[2];
+        if (col[3] !== undefined) this[3] = col[3];
     }
 
     set (r, g = r, b = r, a) {
@@ -319,6 +351,156 @@ class Color {
         this[1] /= a[1];
         this[2] /= a[2];
     }
+
+    // I used a node script to generate this :^)
+    static black = new this("#000000ff");
+    static silver = new this("#c0c0c0ff");
+    static gray = new this("#808080ff");
+    static white = new this("#ffffffff");
+    static maroon = new this("#800000ff");
+    static red = new this("#ff0000ff");
+    static purple = new this("#800080ff");
+    static fuchsia = new this("#ff00ffff");
+    static green = new this("#008000ff");
+    static lime = new this("#00ff00ff");
+    static olive = new this("#808000ff");
+    static yellow = new this("#ffff00ff");
+    static navy = new this("#000080ff");
+    static blue = new this("#0000ffff");
+    static teal = new this("#008080ff");
+    static aqua = new this("#00ffffff");
+    static orange = new this("#ffa500ff");
+    static aliceblue = new this("#f0f8ffff");
+    static antiquewhite = new this("#faebd7ff");
+    static aquamarine = new this("#7fffd4ff");
+    static azure = new this("#f0ffffff");
+    static beige = new this("#f5f5dcff");
+    static bisque = new this("#ffe4c4ff");
+    static blanchedalmond = new this("#ffebcdff");
+    static blueviolet = new this("#8a2be2ff");
+    static brown = new this("#a52a2aff");
+    static burlywood = new this("#deb887ff");
+    static cadetblue = new this("#5f9ea0ff");
+    static chartreuse = new this("#7fff00ff");
+    static chocolate = new this("#d2691eff");
+    static coral = new this("#ff7f50ff");
+    static cornflowerblue = new this("#6495edff");
+    static cornsilk = new this("#fff8dcff");
+    static crimson = new this("#dc143cff");
+    static cyan = new this("#00ffffff");
+    static darkblue = new this("#00008bff");
+    static darkcyan = new this("#008b8bff");
+    static darkgoldenrod = new this("#b8860bff");
+    static darkgray = new this("#a9a9a9ff");
+    static darkgreen = new this("#006400ff");
+    static darkgrey = new this("#a9a9a9ff");
+    static darkkhaki = new this("#bdb76bff");
+    static darkmagenta = new this("#8b008bff");
+    static darkolivegreen = new this("#556b2fff");
+    static darkorange = new this("#ff8c00ff");
+    static darkorchid = new this("#9932ccff");
+    static darkred = new this("#8b0000ff");
+    static darksalmon = new this("#e9967aff");
+    static darkseagreen = new this("#8fbc8fff");
+    static darkslateblue = new this("#483d8bff");
+    static darkslategray = new this("#2f4f4fff");
+    static darkslategrey = new this("#2f4f4fff");
+    static darkturquoise = new this("#00ced1ff");
+    static darkviolet = new this("#9400d3ff");
+    static deeppink = new this("#ff1493ff");
+    static deepskyblue = new this("#00bfffff");
+    static dimgray = new this("#696969ff");
+    static dimgrey = new this("#696969ff");
+    static dodgerblue = new this("#1e90ffff");
+    static firebrick = new this("#b22222ff");
+    static floralwhite = new this("#fffaf0ff");
+    static forestgreen = new this("#228b22ff");
+    static gainsboro = new this("#dcdcdcff");
+    static ghostwhite = new this("#f8f8ffff");
+    static gold = new this("#ffd700ff");
+    static goldenrod = new this("#daa520ff");
+    static greenyellow = new this("#adff2fff");
+    static grey = new this("#808080ff");
+    static honeydew = new this("#f0fff0ff");
+    static hotpink = new this("#ff69b4ff");
+    static indianred = new this("#cd5c5cff");
+    static indigo = new this("#4b0082ff");
+    static ivory = new this("#fffff0ff");
+    static khaki = new this("#f0e68cff");
+    static lavender = new this("#e6e6faff");
+    static lavenderblush = new this("#fff0f5ff");
+    static lawngreen = new this("#7cfc00ff");
+    static lemonchiffon = new this("#fffacdff");
+    static lightblue = new this("#add8e6ff");
+    static lightcoral = new this("#f08080ff");
+    static lightcyan = new this("#e0ffffff");
+    static lightgoldenrodyellow = new this("#fafad2ff");
+    static lightgray = new this("#d3d3d3ff");
+    static lightgreen = new this("#90ee90ff");
+    static lightgrey = new this("#d3d3d3ff");
+    static lightpink = new this("#ffb6c1ff");
+    static lightsalmon = new this("#ffa07aff");
+    static lightseagreen = new this("#20b2aaff");
+    static lightskyblue = new this("#87cefaff");
+    static lightslategray = new this("#778899ff");
+    static lightslategrey = new this("#778899ff");
+    static lightsteelblue = new this("#b0c4deff");
+    static lightyellow = new this("#ffffe0ff");
+    static limegreen = new this("#32cd32ff");
+    static linen = new this("#faf0e6ff");
+    static magenta = new this("#ff00ffff");
+    static mediumaquamarine = new this("#66cdaaff");
+    static mediumblue = new this("#0000cdff");
+    static mediumorchid = new this("#ba55d3ff");
+    static mediumpurple = new this("#9370dbff");
+    static mediumseagreen = new this("#3cb371ff");
+    static mediumslateblue = new this("#7b68eeff");
+    static mediumspringgreen = new this("#00fa9aff");
+    static mediumturquoise = new this("#48d1ccff");
+    static mediumvioletred = new this("#c71585ff");
+    static midnightblue = new this("#191970ff");
+    static mintcream = new this("#f5fffaff");
+    static mistyrose = new this("#ffe4e1ff");
+    static moccasin = new this("#ffe4b5ff");
+    static navajowhite = new this("#ffdeadff");
+    static oldlace = new this("#fdf5e6ff");
+    static olivedrab = new this("#6b8e23ff");
+    static orangered = new this("#ff4500ff");
+    static orchid = new this("#da70d6ff");
+    static palegoldenrod = new this("#eee8aaff");
+    static palegreen = new this("#98fb98ff");
+    static paleturquoise = new this("#afeeeeff");
+    static palevioletred = new this("#db7093ff");
+    static papayawhip = new this("#ffefd5ff");
+    static peachpuff = new this("#ffdab9ff");
+    static peru = new this("#cd853fff");
+    static pink = new this("#ffc0cbff");
+    static plum = new this("#dda0ddff");
+    static powderblue = new this("#b0e0e6ff");
+    static rosybrown = new this("#bc8f8fff");
+    static royalblue = new this("#4169e1ff");
+    static saddlebrown = new this("#8b4513ff");
+    static salmon = new this("#fa8072ff");
+    static sandybrown = new this("#f4a460ff");
+    static seagreen = new this("#2e8b57ff");
+    static seashell = new this("#fff5eeff");
+    static sienna = new this("#a0522dff");
+    static skyblue = new this("#87ceebff");
+    static slateblue = new this("#6a5acdff");
+    static slategray = new this("#708090ff");
+    static slategrey = new this("#708090ff");
+    static snow = new this("#fffafaff");
+    static springgreen = new this("#00ff7fff");
+    static steelblue = new this("#4682b4ff");
+    static tan = new this("#d2b48cff");
+    static thistle = new this("#d8bfd8ff");
+    static tomato = new this("#ff6347ff");
+    static turquoise = new this("#40e0d0ff");
+    static violet = new this("#ee82eeff");
+    static wheat = new this("#f5deb3ff");
+    static whitesmoke = new this("#f5f5f5ff");
+    static yellowgreen = new this("#9acd32ff");
+    static rebeccapurple = new this("#663399ff");
 }
 
 // inrange(point, start, end)
@@ -439,6 +621,8 @@ class Graphic extends Entity {
         this.visible = true;
         this.enabled = true;
         this.drawFromOrigin = false;
+        this.angle = 0;
+        this.useRadians = false;
 
         // Copy data to this
         Object.assign(this, data);
@@ -448,6 +632,19 @@ class Graphic extends Entity {
         this._isHovered = false;
         this._downStart = 0;
         this._hoverStart = 0;
+        this._angDeg = 0;
+    }
+
+    get angle() {
+        if (this.useRadians) {
+            return this._angDeg * Math.PI / 180;
+        } else {
+            return this._angDeg;
+        }
+    }
+    set angle(a) {
+        if (typeof a !== "number") throw new Error("The angle must be a number.");
+        this._angDeg = a;
     }
 
     think() {
@@ -605,6 +802,7 @@ class Line extends Graphic {
         if (typeof this.start  !== "number") this.start  = new Vector(4);
         if (typeof this.end    !== "number") this.end    = new Vector(16);
         if (typeof this.weight !== "number") this.weight = 1;
+        this.drawFromOrigin = true;
     }
     draw() {
         ngf.context.strokeStyle = this.color.rgba;
@@ -623,6 +821,7 @@ class Poly extends Graphic {
         super(data);
 
         if (!(this.points instanceof Array)) this.points = [];
+        this.drawFromOrigin = true;
     }
     draw() {
         ngf.context.fillStyle = this.color.rgba;
@@ -646,8 +845,14 @@ class Poly extends Graphic {
 }
 
 
-ngf.frameRenderTime = [];
-ngf.averageFrameRenderTime = 0;
+ngf.frameRenderTracking = 50; // The previous frame render times to keep track of
+ngf.frameRenderIndex = -1; // Internal, the current index in the measurement array
+ngf.frameRenderTime = []; // Cache of previous render times
+ngf.averageFrameRenderTime = 0; // Calculated at the end of a frame render
+
+for (let i = 0; i < ngf.frameRenderTracking; i++) {
+    ngf.frameRenderTime.push(0);
+}
 
 // Rendering
 function drawFrame() {
@@ -663,10 +868,18 @@ function drawFrame() {
         ngf.entities.forEach((ent, id, map) => {
             if (ent instanceof Graphic) { // Only draw if it's a graphic entity
                 if (ent.visible && ent.draw instanceof Function) {
-                    ngf.context.save();
+                    let [w, h] = [0, 0];
+                    if (ent.size instanceof Vector) {
+                        [w, h] = [ent.size[0], ent.size[1]];
+                    } else if (ent.radius) {
+                        [w, h] = [ent.radius, ent.radius];
+                    }
 
                     // Only transform the canvas if it's not drawing from 0, 0
-                    if (typeof ent.drawFromOrigin === "boolean" && !ent.drawFromOrigin) {
+                    let noDrawFromOrigin = (typeof ent.drawFromOrigin === "boolean" && !ent.drawFromOrigin);
+                    if (noDrawFromOrigin) {
+                        ngf.context.save();
+
                         // We want `Graphic.draw()` to be drawn from 0, 0
                         let [x, y] = [ent.pos[0], ent.pos[1]];
 
@@ -675,48 +888,40 @@ function drawFrame() {
                             x -= ent.radius;
                             y -= ent.radius;
                         }
-
-                        let r = 0;
-                        if (typeof ent.angle === "number") {
-                            if (typeof ent.useRadians === "boolean" && ent.useRadians) r = ent.angle;
-                            else r = ent.angle * Math.PI / 180;
-                        }
                         
                         if (x !== 0 || y !== 0) ngf.context.translate(x, y);
-                        if (r !== 0) ngf.context.rotate(r);
+                        if (typeof ent.angle === "number" && ent.angle !== 0) ngf.context.rotate(ent.angle);
 
-                        if (ent.size instanceof Vector) {
-                            ngf.context.rect(0, 0, ent.size[0], ent.size[1]);
+                        if (w > 0 && h > 0) {
+                            ngf.context.rect(0, 0, w, h);
                             ngf.context.clip();
-                        } else if (typeof ent.radius === "number") {
-                            ngf.context.rect(0, 0, ent.radius, ent.radius);
                         }
-                    }
-
-                    let [w, h] = [0, 0];
-                    if (ent.size instanceof Vector) {
-                        [w, h] = [ent.size[0], ent.size[1]];
-                    } else if (ent.radius) {
-                        [w, h] = [ent.radius, ent.radius];
                     }
 
                     ent.draw(w, h);
 
-                    ngf.context.restore();
+                    // Reset the matrix if we didn't draw from origin
+                    if (noDrawFromOrigin) ngf.context.restore();
                 }
             }
         });
     }
 
     let endTime = Date.now();
-    ngf.frameRenderTime.push(endTime - startTime);
-    if (ngf.frameRenderTime.length > 5) ngf.frameRenderTime.splice(0, 1);
+
+    let deltaTime = endTime - startTime;
+    ngf.frameRenderIndex++;
+    ngf.frameRenderTime[ngf.frameRenderIndex] = deltaTime;
+
+    if (ngf.frameRenderIndex >= ngf.frameRenderTracking) ngf.frameRenderIndex = 0;
     
     let sum = 0;
-    for (let i = 0; i < ngf.frameRenderTime.length; i++) {
-        sum += ngf.frameRenderTime[i];
+    for (let i = 0; i < ngf.frameRenderTracking; i++) {
+        sum += ngf.frameRenderTime[i]/1000;
     }
-    ngf.averageFrameRenderTime = sum/ngf.frameRenderTime.length;
+    ngf.averageFrameRenderTime = sum/ngf.frameRenderTracking;
+    
+    ngf.actualFrameRate = Math.floor(1/ngf.averageFrameRenderTime);
 
     // Start the next frame
     if (ngf.fps > 0) {
