@@ -14,12 +14,12 @@
 //      Number x: the start number
 //      Number y: the end number
 //      Number p: the progress %; should be a number between 0 and 1
-// -> Returns a boolean
-function lerp(x, y, p) {
-    if (typeof x !== "number") throw new Error("lerp: bad argument #1: expected a number, got " + typeof x);
-    if (typeof y !== "number") throw new Error("lerp: bad argument #2: expected a number, got " + typeof y);
-    if (typeof p !== "number") throw new Error("lerp: bad argument #3: expected a number, got " + typeof p);
-    return x + p * (y - x);
+// -> Returns a number (float format)
+function lerp(start, end, prog) {
+    if (typeof start !== "number") throw new Error("lerp: bad argument #1: expected a number, got " + typeof start);
+    if (typeof end !== "number") throw new Error("lerp: bad argument #2: expected a number, got " + typeof end);
+    if (typeof prog !== "number") throw new Error("lerp: bad argument #3: expected a number, got " + typeof prog);
+    return start + prog * (end - start);
 }
 
 // Vectors, used for positions and sizes. 
@@ -263,9 +263,9 @@ class Color {
         return "#" + r + g + b + a;
     }
 
-    get array() {return [this[0], this[1], this[2], this[3]];}
+    get array()  {return [this[0], this[1], this[2], this[3]];}
     get object() {return {r: this[0], g: this[1], b: this[2], a: this[3], red: this[0], green: this[1], blue: this[2], alpha: this[3]};}
-    get copy() {return new this(this[0], this[1], this[2], this[3]);}
+    get copy()   {return new this(this[0], this[1], this[2], this[3]);}
 
     set r(r) {
         if (typeof r !== "number") throw new Error("The value of red must be a number.");
@@ -522,6 +522,7 @@ let ngf = {};
 
 ngf.entities = new Map(); // Map of all objects
 ngf.entCount = 0; // We could use ngf.entities.size, but if a random entity is deleted, new entities will be deleted, so we just store a count that doesn't decrement
+ngf.renderedEnts = new Set(); // We will store rendering objects in this set so they aren't rendered twice. Cleared at the end of every frame.
 ngf.animations = new Map(); // Map of all running animations
 ngf.mouse = {pos: new Vector(-1), down: false}; // Tracks the mouse for user input
 ngf.canvas = null; // The canvas the mouse is tracked to
@@ -532,7 +533,7 @@ ngf.tickRate = 66; // How many times an entity "thinks" every second
 
 // Now functions and classes that require the variables above
 
-// 
+// Function used to check if the mouse is hovering a certain object. Will become more indepth later to include overlapping objects
 ngf.mouse.hovering = function(obj) {
     if (!(obj instanceof Entity)) throw new Error("ngf.mouse.hovering: bad argument #1: expected an entity, got " + typeof obj);
     if (!obj.pos)                 throw new Error("ngf.mouse.hovering: bad argument #1: invalid entity supplied, has no position.");
@@ -603,14 +604,62 @@ function setCanvas(id) {
 
 */
 
+// Functions easing animations. Referenced from https://www.febucci.com/2018/08/easing-functions/
+function easeIn(value, exponent) {
+    if (typeof value !== "number")    throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
+    if (typeof exponent !== "number") throw new Error("easeIn: Bad argument #2: Expected a number, got " + typeof exponent);
+    return value ** exponent;
+}
+function flip(value) {
+    if (typeof value !== "number") throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
+    return 1 - value;
+}
+function easeOut(value, exponent) {
+    if (typeof value !== "number")    throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
+    if (typeof exponent !== "number") throw new Error("easeIn: Bad argument #2: Expected a number, got " + typeof exponent);
+    return flip(flip(value) ** exponent);
+}
+function easeInOut(value, exponent) {
+    if (typeof value !== "number")    throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
+    if (typeof exponent !== "number") throw new Error("easeIn: Bad argument #2: Expected a number, got " + typeof exponent);
+    return lerp(easeIn(value, exponent), easeOut(value, exponent), value)
+}
+
 // For a complete documentation of all the classes below, see [not yet created]
 
 class Entity {
-    constructor () {
+    constructor (data) {
         this.id = ngf.entCount++;
         this.enabled = true;
+        this.parent = null;
+        this.children = new Map();
+
+        Object.assign(this, data);
+
+        // Internal variables of the ones above, used to validate input types since Javascript doesn't let me do "bool enabled = true;"
+        this._enabled = true;
+        this._parent = null;
+
         ngf.entities.set(this.id, this);
     }
+
+    set enabled(en) {
+        if (typeof en !== "boolean") throw new Error("You must give a boolean to enable/disable an entity");
+        this._enabled = en;
+    }
+    get enabled() {return this._enabled;}
+
+    set parent(par) {
+        if (par === null || par === undefined || par instanceof Entity) {
+            this._parent = par;
+        } else throw new Error("You must set the parent to a valid entity object, but got " + typeof par)
+    }
+    get parent() {
+        if (this._parent instanceof Entity) return this._parent;
+        else return null;
+    }
+
+    static null = new this({enabled: false});
 }
 
 class Graphic extends Entity {
@@ -645,6 +694,84 @@ class Graphic extends Entity {
     set angle(a) {
         if (typeof a !== "number") throw new Error("The angle must be a number.");
         this._angDeg = a;
+    }
+
+    moveTo(pos, duration = 1000, ease, onFinish) {
+        if (!(pos instanceof Vector)) throw new Error("<Graphic>.moveTo: Bad argument #1: Expected a Vector, got " + typeof pos);
+
+        let animX = new Animation();
+        let animY = new Animation();
+
+        animX.object = this.pos;
+        animY.object = this.pos;
+
+        animX.modifying = 0;
+        animY.modifying = 1;
+        
+        animX.start = this.pos[0];
+        animY.start = this.pos[1];
+        
+        animX.end = pos[0];
+        animY.end = pos[1];
+        
+        if (typeof duration === "number") animX.duration = duration;
+        if (typeof duration === "number") animY.duration = duration;
+
+        if (typeof ease === "number") animX.ease = ease;
+        if (typeof ease === "number") animY.ease = ease;
+
+        if (onFinish instanceof Function) animY.onFinish = onFinish;
+
+        animX.startAnim();
+        animY.startAnim();
+        return animY;
+    }
+
+    colorTo(col, duration = 1000, ease, onFinish) {
+        if (!(col instanceof Color)) throw new Error("<Graphic>.colorTo: Bad argument #1: Expected a Color, got " + typeof col);
+
+        let animR = new Animation();
+        let animG = new Animation();
+        let animB = new Animation();
+        let animA = new Animation();
+
+        animR.object = this.color;
+        animG.object = this.color;
+        animB.object = this.color;
+        animA.object = this.color;
+
+        animR.modifying = 0;
+        animG.modifying = 1;
+        animB.modifying = 2;
+        animA.modifying = 3;
+        
+        animR.start = this.color[0];
+        animG.start = this.color[1];
+        animB.start = this.color[2];
+        animA.start = this.color[3];
+        
+        animR.end = col[0];
+        animG.end = col[1];
+        animB.end = col[2];
+        animA.end = col[3];
+        
+        if (typeof duration === "number") animR.duration = duration;
+        if (typeof duration === "number") animG.duration = duration;
+        if (typeof duration === "number") animB.duration = duration;
+        if (typeof duration === "number") animA.duration = duration;
+
+        if (typeof ease === "number") animR.ease = ease;
+        if (typeof ease === "number") animG.ease = ease;
+        if (typeof ease === "number") animB.ease = ease;
+        if (typeof ease === "number") animA.ease = ease;
+
+        if (onFinish instanceof Function) animA.onFinish = onFinish;
+
+        animR.startAnim();
+        animG.startAnim();
+        animB.startAnim();
+        animA.startAnim();
+        return animA;
     }
 
     think() {
@@ -697,6 +824,37 @@ class Box extends Graphic {
         if (typeof this.cornerRadius !== "number") this.cornerRadius = 0;
     }
     
+    sizeTo(size, duration = 1000, ease, onFinish) {
+        if (!(size instanceof Vector)) throw new Error("<Graphic>.moveTo: Bad argument #1: Expected a Vector, got " + typeof size);
+
+        let animX = new Animation();
+        let animY = new Animation();
+
+        animX.object = this.size;
+        animY.object = this.size;
+
+        animX.modifying = 0;
+        animY.modifying = 1;
+        
+        animX.start = this.size[0];
+        animY.start = this.size[1];
+        
+        animX.end = size[0];
+        animY.end = size[1];
+        
+        if (typeof duration === "number") animX.duration = duration;
+        if (typeof duration === "number") animY.duration = duration;
+
+        if (typeof ease === "number") animX.ease = ease;
+        if (typeof ease === "number") animY.ease = ease;
+
+        if (onFinish instanceof Function) animY.onFinish = onFinish;
+
+        animX.startAnim();
+        animY.startAnim();
+        return animY;
+    }
+
     draw(w, h) {
         ngf.context.fillStyle = this.color.rgba;
 
@@ -729,6 +887,54 @@ class Button extends Box {
         if (typeof this.font !== "string") this.font = "16px Arial";
         if (!(this.textColor instanceof Color)) this.textColor = new Color();
     }
+
+    textColorTo(col, duration = 1000, ease, onFinish) {
+        if (!(col instanceof Color)) throw new Error("<Graphic>.textColorTo: Bad argument #1: Expected a Color, got " + typeof col);
+
+        let animR = new Animation();
+        let animG = new Animation();
+        let animB = new Animation();
+        let animA = new Animation();
+
+        animR.object = this.textColor;
+        animG.object = this.textColor;
+        animB.object = this.textColor;
+        animA.object = this.textColor;
+
+        animR.modifying = 0;
+        animG.modifying = 1;
+        animB.modifying = 2;
+        animA.modifying = 3;
+        
+        animR.start = this.textColor[0];
+        animG.start = this.textColor[1];
+        animB.start = this.textColor[2];
+        animA.start = this.textColor[3];
+        
+        animR.end = col[0];
+        animG.end = col[1];
+        animB.end = col[2];
+        animA.end = col[3];
+        
+        if (typeof duration === "number") animR.duration = duration;
+        if (typeof duration === "number") animG.duration = duration;
+        if (typeof duration === "number") animB.duration = duration;
+        if (typeof duration === "number") animA.duration = duration;
+
+        if (typeof ease === "number") animR.ease = ease;
+        if (typeof ease === "number") animG.ease = ease;
+        if (typeof ease === "number") animB.ease = ease;
+        if (typeof ease === "number") animA.ease = ease;
+
+        if (onFinish instanceof Function) animA.onFinish = onFinish;
+
+        animR.startAnim();
+        animG.startAnim();
+        animB.startAnim();
+        animA.startAnim();
+        return animA;
+    }
+
     draw(w, h) {
         super.draw(w, h);
 
@@ -772,6 +978,54 @@ class Text extends Graphic {
         if (typeof this.font !== "string") this.font = "16px Arial";
         if (!(this.textColor instanceof Color)) this.textColor = new Color();
     }
+
+    textColorTo(col, duration = 1000, ease, onFinish) {
+        if (!(col instanceof Color)) throw new Error("<Graphic>.textColorTo: Bad argument #1: Expected a Color, got " + typeof col);
+
+        let animR = new Animation();
+        let animG = new Animation();
+        let animB = new Animation();
+        let animA = new Animation();
+
+        animR.object = this.textColor;
+        animG.object = this.textColor;
+        animB.object = this.textColor;
+        animA.object = this.textColor;
+
+        animR.modifying = 0;
+        animG.modifying = 1;
+        animB.modifying = 2;
+        animA.modifying = 3;
+        
+        animR.start = this.textColor[0];
+        animG.start = this.textColor[1];
+        animB.start = this.textColor[2];
+        animA.start = this.textColor[3];
+        
+        animR.end = col[0];
+        animG.end = col[1];
+        animB.end = col[2];
+        animA.end = col[3];
+        
+        if (typeof duration === "number") animR.duration = duration;
+        if (typeof duration === "number") animG.duration = duration;
+        if (typeof duration === "number") animB.duration = duration;
+        if (typeof duration === "number") animA.duration = duration;
+
+        if (typeof ease === "number") animR.ease = ease;
+        if (typeof ease === "number") animG.ease = ease;
+        if (typeof ease === "number") animB.ease = ease;
+        if (typeof ease === "number") animA.ease = ease;
+
+        if (onFinish instanceof Function) animA.onFinish = onFinish;
+
+        animR.startAnim();
+        animG.startAnim();
+        animB.startAnim();
+        animA.startAnim();
+        return animA;
+    }
+
     draw() {
         ngf.context.font = this.font;
         ngf.context.fillStyle = this.textColor.rgba;
@@ -844,12 +1098,102 @@ class Poly extends Graphic {
     }
 }
 
+class Animation extends Entity {
+    constructor (data) {
+        super();
+
+        this.object = null;    // The entity we are performing this animation on
+        this.modifying = null; // The key we are modifying on the entity
+        this.value = 0;        // The current value of of the number
+        this.start = 0;        // The starting number to animate from
+        this.end = 0;          // The ending number to animate to
+        this.progress = 0;     // Number between 0 and 1; the progress (%) between the start and end value
+        this.duration = 0;     // How long it should take to get from one point to the other
+        this.ease = 1;         // The exponential ease value
+        this.ellapsedTime = 0; // How long the animation has ran since it started
+        
+        // Assign all input data to this
+        Object.assign(this, data);
+
+        // Internal variables
+        this._startedTimestamp = 0;
+        this._finishedTimestamp = null;
+        this._running = false;
+        this._object = null;
+        this._modifying = null;
+
+        ngf.animations.set(this.id, this);
+    }
+
+    set object(ent) {
+        if (ent instanceof Object || ent === null || ent === undefined) {
+            this._object = ent;
+        } else console.warn("Attempted to set the object to an invalid value.");
+    }
+    get object() {
+        if (this._object instanceof Object) return this._object;
+        return null;
+    }
+
+    startAnim(restart) {
+        if (!(this.object instanceof Object))   throw new Error("Attempted to start an animation without a valid object.");
+        if (typeof this.modifying !== "string" && typeof this.modifying !== "number") throw new Error("Attempted to start an animation without a valid object modification key.");
+        if (typeof this.start     !== "number") throw new Error("Attempted to start an animation with an invalid start value; it must be a number.");
+        if (typeof this.end       !== "number") throw new Error("Attempted to start an animation with an invalid ending value; it must be a number.");
+
+        if (typeof this.value        !== "number") this.value = this.start;
+        if (typeof this.progress     !== "number") this.progress = 0;
+        if (typeof this.ease         !== "number") this.ease = 1;
+        if (typeof this.ellapsedTime !== "number") this.ellapsedTime = 0;
+
+        this._startedTimestamp = Date.now();
+        this._running = true;
+
+        if (this.ellapsedTime > 0 && !restart) {
+            this._startedTimestamp -= this.ellapsedTime;            
+        }
+    }
+    pauseAnim() {
+        this._running = false;
+        this.ellapsedTime = Date.now() - this._startedTimestamp;
+    }
+    finishAnim() {
+        if (this._running) {
+            if (typeof this.object[this.modifying] !== "number") throw new Error("The modification key is supposed to be assigned to a numerical value.");
+            this._running = false;
+            this.object[this.modifying] = this.end;
+            this.progress = 1;
+            this._finishedTimestamp = Date.now();
+
+            if (this.onFinish instanceof Function) this.onFinish();
+        } else console.warn("Attempted to finish an animation that wasn't running.");
+    }
+
+    update() {
+        if (typeof this.object[this.modifying] !== "number") throw new Error("The modification key is supposed to be assigned to a numerical value.");
+
+        if (!this._running) return;
+
+        this.ellapsedTime = Date.now() - this._startedTimestamp;
+        this.progress = this.ellapsedTime / this.duration;
+
+        if (this.progress >= 1) {
+            this.finishAnim();
+        }
+
+        let prog = this.ease > 1 ? easeInOut(this.progress, this.ease) : this.progress;
+
+        this.object[this.modifying] = lerp(this.start, this.end, prog);
+    }
+}
+
 
 ngf.frameRenderTracking = 50; // The previous frame render times to keep track of
-ngf.frameRenderIndex = -1; // Internal, the current index in the measurement array
-ngf.frameRenderTime = []; // Cache of previous render times
-ngf.averageFrameRenderTime = 0; // Calculated at the end of a frame render
+ngf.frameRenderIndex = -1;    // Internal, the current index in the measurement array
+ngf.frameRenderTime = [];     // Cache of previous render times
+ngf.deltaTime = 0;            // Calculated at the end of a frame render
 
+// Fill the render time so it is constantly the same length
 for (let i = 0; i < ngf.frameRenderTracking; i++) {
     ngf.frameRenderTime.push(0);
 }
@@ -863,6 +1207,15 @@ function drawFrame() {
         // Ensure the background is black
         ngf.context.fillStyle = "rgb(0,0,0)";
         ngf.context.fillRect(0, 0, ngf.canvas.width, ngf.canvas.height);
+
+        // Loop through all animations and update them before drawing the frame
+        ngf.animations.forEach((anim, id, map) => {
+            if (anim instanceof Animation) {
+                if (anim._running) {
+                    anim.update();
+                }
+            }
+        });
 
         // Loop through all entities and call .draw
         ngf.entities.forEach((ent, id, map) => {
@@ -919,9 +1272,9 @@ function drawFrame() {
     for (let i = 0; i < ngf.frameRenderTracking; i++) {
         sum += ngf.frameRenderTime[i]/1000;
     }
-    ngf.averageFrameRenderTime = sum/ngf.frameRenderTracking;
+    ngf.deltaTime = sum/ngf.frameRenderTracking;
     
-    ngf.actualFrameRate = Math.floor(1/ngf.averageFrameRenderTime);
+    ngf.actualFrameRate = Math.floor(1/ngf.deltaTime);
 
     // Start the next frame
     if (ngf.fps > 0) {
