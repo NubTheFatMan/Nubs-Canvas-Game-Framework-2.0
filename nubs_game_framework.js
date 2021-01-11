@@ -598,29 +598,10 @@ function setCanvas(id) {
 */
 
 // Functions easing animations. Referenced from https://www.febucci.com/2018/08/easing-functions/
-function easeIn(value, exponent) {
-    if (typeof value !== "number")    throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
-    if (typeof exponent !== "number") throw new Error("easeIn: Bad argument #2: Expected a number, got " + typeof exponent);
-    return value ** exponent;
-}
-function flip(value) {
-    if (typeof value !== "number") throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
-    return 1 - value;
-}
-function easeOut(value, exponent) {
-    if (typeof value !== "number")    throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
-    if (typeof exponent !== "number") throw new Error("easeIn: Bad argument #2: Expected a number, got " + typeof exponent);
-    return flip(flip(value) ** exponent);
-}
 function easeInOut(value, exponent) {
     if (typeof value !== "number")    throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
     if (typeof exponent !== "number") throw new Error("easeIn: Bad argument #2: Expected a number, got " + typeof exponent);
-    return lerp(easeIn(value, exponent), easeOut(value, exponent), value);
-}
-function easeOutIn(value, exponent) {
-    if (typeof value !== "number")    throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
-    if (typeof exponent !== "number") throw new Error("easeIn: Bad argument #2: Expected a number, got " + typeof exponent);
-    return lerp(easeOut(value, exponent), easeIn(value, exponent), value);
+    return value < 0.5 ? (2 ** (exponent - 1)) * (value ** exponent) : 1 - ((-2 * value + 2) ** exp) / 2;
 }
 
 // For a complete documentation of all the classes below, see [not yet created]
@@ -1175,11 +1156,11 @@ class Animation extends Entity {
         this.ellapsedTime = Date.now() - this._startedTimestamp;
         this.progress = this.ellapsedTime / this.duration;
 
-        if (this.progress >= 1) {
+        if (this.ellapsedTime >= this.duration) {
             this.finishAnim();
         }
 
-        let prog = this.ease > 1 ? easeInOut(this.progress, this.ease) : this.progress;
+        let prog = this.ease !== 1 ? easeInOut(this.progress, this.ease) : this.progress;
 
         this.object[this.modifying] = lerp(this.start, this.end, prog);
 
@@ -1245,9 +1226,11 @@ function drawFrame() {
                         if (x !== 0 || y !== 0) ngf.context.translate(x, y);
                         if (typeof ent.angle === "number" && ent.angle !== 0) ngf.context.rotate(ent.angle);
 
-                        if (w > 0 && h > 0) {
+                        if (w > 0 && h > 0 && ent.drawMask) {
+                            ngf.context.beginPath();
                             ngf.context.rect(0, 0, w, h);
                             ngf.context.clip();
+                            ngf.context.closePath();
                         }
                     }
 
