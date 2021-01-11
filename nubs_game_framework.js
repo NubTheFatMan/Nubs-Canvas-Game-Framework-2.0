@@ -44,7 +44,7 @@ class Vector {
     }
     set y(y) {
         if (typeof y !== "number") throw new Error("The y position must be a number.");
-        this[0] = y;
+        this[1] = y;
     }
     set w(w) {
         if (typeof w !== "number") throw new Error("The width must be a number.");
@@ -52,7 +52,7 @@ class Vector {
     }
     set h(h) {
         if (typeof h !== "number") throw new Error("The height must be a number.");
-        this[0] = h;
+        this[1] = h;
     }
 
     set(x, y = x) {
@@ -65,7 +65,7 @@ class Vector {
     }
 
     get array() {return [this[0], this[1]];}
-    get object() {return {x: this[0], y: this[1]};}
+    get object() {return {x: this[0], y: this[1], w: this[0], h: this[1]};}
 
     static add(a, b) {
         if (!(a instanceof Vector)) throw new Error("Vector.add: bad argument #1: Expected a Vector, got " + typeof a);
@@ -126,14 +126,6 @@ class Vector {
     dot(a) {
         if (!(a instanceof Vector)) throw new Error("Vector.dot: bad argument #1: Expected a Vector, got " + typeof a);
         return this[0] * a[0] + this[1] * a[1];
-    }
-
-    static lerp(a, b, p) {
-        if (!(a instanceof Vector)) throw new Error("Vector.lerp: bad argument #1: Expected a Vector, got " + typeof a);
-        if (!(b instanceof Vector)) throw new Error("Vector.lerp: bad argument #2: Expected a Vector, got " + typeof b);
-        if (typeof p !== "number")  throw new Error("Vector.lerp: Bad argument #3: Expected a number, got " + typeof p);
-
-        return new this(lerp(a[0], b[0], p), lerp(a[1], b[1], p));
     }
 
     static rotate(a, angle, origin) {
@@ -529,6 +521,7 @@ ngf.canvas = null; // The canvas the mouse is tracked to
 ngf.context = null; // What this framework draws to
 ngf.fps = 0; // 0 is as many frames as possible. Any higher number is the actual FPS
 ngf.tickRate = 66; // How many times an entity "thinks" every second
+ngf.onFrameRender = []; // User defined functions to run every frame
 
 
 // Now functions and classes that require the variables above
@@ -622,7 +615,12 @@ function easeOut(value, exponent) {
 function easeInOut(value, exponent) {
     if (typeof value !== "number")    throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
     if (typeof exponent !== "number") throw new Error("easeIn: Bad argument #2: Expected a number, got " + typeof exponent);
-    return lerp(easeIn(value, exponent), easeOut(value, exponent), value)
+    return lerp(easeIn(value, exponent), easeOut(value, exponent), value);
+}
+function easeOutIn(value, exponent) {
+    if (typeof value !== "number")    throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
+    if (typeof exponent !== "number") throw new Error("easeIn: Bad argument #2: Expected a number, got " + typeof exponent);
+    return lerp(easeOut(value, exponent), easeIn(value, exponent), value);
 }
 
 // For a complete documentation of all the classes below, see [not yet created]
@@ -860,7 +858,7 @@ class Box extends Graphic {
 
         // If the corner radius is 0, we don't need to waste time tracing a path and just fill a rectangle
         if (this.cornerRadius === 0) {
-            ngf.context.fillRect(0, 0, w, w);
+            ngf.context.fillRect(0, 0, w, h);
         } else {
             let [x, y] = [0, 0];
             ngf.context.beginPath();
@@ -1184,6 +1182,8 @@ class Animation extends Entity {
         let prog = this.ease > 1 ? easeInOut(this.progress, this.ease) : this.progress;
 
         this.object[this.modifying] = lerp(this.start, this.end, prog);
+
+        if (this.onUpdate instanceof Function) this.onUpdate(this.progress);
     }
 }
 
@@ -1275,6 +1275,10 @@ function drawFrame() {
     ngf.deltaTime = sum/ngf.frameRenderTracking;
     
     ngf.actualFrameRate = Math.floor(1/ngf.deltaTime);
+
+    for (let i = 0; i < ngf.onFrameRender.length; i++) {
+        if (ngf.onFrameRender[i] instanceof Function) ngf.onFrameRender[i]();
+    }
 
     // Start the next frame
     if (ngf.fps > 0) {
