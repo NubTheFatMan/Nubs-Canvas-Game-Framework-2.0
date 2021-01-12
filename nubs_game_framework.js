@@ -495,6 +495,184 @@ class Color {
     static rebeccapurple = new this("#663399ff");
 }
 
+class KeyCode {
+    // All these keys were either generated using a node script, or manually recorded
+    static KeyA = 65;
+    static KeyB = 66;
+    static KeyC = 67;
+    static KeyD = 68;
+    static KeyE = 69;
+    static KeyF = 70;
+    static KeyG = 71;
+    static KeyH = 72;
+    static KeyI = 73;
+    static KeyJ = 74;
+    static KeyK = 75;
+    static KeyL = 76;
+    static KeyM = 77;
+    static KeyN = 78;
+    static KeyO = 79;
+    static KeyP = 80;
+    static KeyQ = 81;
+    static KeyR = 82;
+    static KeyS = 83;
+    static KeyT = 84;
+    static KeyU = 85;
+    static KeyV = 86;
+    static KeyW = 87;
+    static KeyX = 88;
+    static KeyY = 89;
+    static KeyZ = 90;
+
+    static a = 65;
+    static b = 66;
+    static c = 67;
+    static d = 68;
+    static e = 69;
+    static f = 70;
+    static g = 71;
+    static h = 72;
+    static i = 73;
+    static j = 74;
+    static k = 75;
+    static l = 76;
+    static m = 77;
+    static n = 78;
+    static o = 79;
+    static p = 80;
+    static q = 81;
+    static r = 82;
+    static s = 83;
+    static t = 84;
+    static u = 85;
+    static v = 86;
+    static w = 87;
+    static x = 88;
+    static y = 89;
+    static z = 90;
+
+    static Digit0 = 48;
+    static Digit1 = 49;
+    static Digit2 = 50;
+    static Digit3 = 51;
+    static Digit4 = 52;
+    static Digit5 = 53;
+    static Digit6 = 54;
+    static Digit7 = 55;
+    static Digit8 = 56;
+    static Digit9 = 57;
+
+    static ['0'] = 48;
+    static ['1'] = 49;
+    static ['2'] = 50;
+    static ['3'] = 51;
+    static ['4'] = 52;
+    static ['5'] = 53;
+    static ['6'] = 54;
+    static ['7'] = 55;
+    static ['8'] = 56;
+    static ['9'] = 57;
+
+    static Numpad0 = 96;
+    static Numpad1 = 97;
+    static Numpad2 = 98;
+    static Numpad3 = 99;
+    static Numpad4 = 100;
+    static Numpad5 = 101;
+    static Numpad6 = 102;
+    static Numpad7 = 103;
+    static Numpad8 = 104;
+    static Numpad9 = 105;
+
+    static NumpadDecimal  = 110;
+    static NumpadAdd      = 107;
+    static NumpadSubtract = 109;
+    static NumpadMultiply = 106;
+    static NumpadDivide   = 111;
+
+    static ArrowLeft  = 37;
+    static ArrowUp    = 38;
+    static ArrowRight = 39;
+    static ArrowDown  = 40;
+
+    static Enter       = 13;
+    static NumpadEnter = 13;
+
+    static Shift      = 16;
+    static ShiftLeft  = 16;
+    static ShiftRight = 16;
+
+    static Control      = 17;
+    static ControlLeft  = 17;
+    static ControlRight = 17;
+
+    static Alt      = 18;
+    static AltLeft  = 18;
+    static AltRight = 18;
+
+    static Backspace = 8;
+    static Space     = 32;
+    static CapsLock  = 20;
+    static [' ']     = 32;
+
+    static BracketLeft  = 219;
+    static BracketRight = 221;
+    static ['[']        = 219;
+    static [']']        = 221;
+
+    static Minus = 189;
+    static Equal = 187;
+    static ['-'] = 189;
+    static ['='] = 187;
+
+    static Semicolon = 186;
+    static Quote     = 222;
+    static [';']     = 186;
+    static ["'"]     = 186;
+
+    static Comma  = 188;
+    static Period = 190;
+    static [',']  = 188;
+    static ['.']  = 190;
+
+    static Slash     = 191;
+    static Backslash = 220;
+    static ['/']     = 191;
+    static ['\\']    = 220;
+
+    static Backquote = 192;
+    static ['`']     = 192;
+
+    static _downKeys = new Map(); // Current keys that are pressed
+    static _lastDownKeys = new Map(); // The keys that were pressed in the previous frame (tick)
+
+    static isKeyDown(key) {
+        if (typeof key !== "string" && typeof key !== "number") throw new Error("KeyCode.isKeyDown: Bad argument #1: string or number expected, got " + typeof key);
+        return this._downKeys.get(key);
+    }
+
+    static wasKeyDown(key) {
+        if (typeof key !== "string" && typeof key !== "number") throw new Error("KeyCode.wasKeyDown: Bad argument #1: string or number expected, got " + typeof key);
+        return this._lastDownKeys.get(key);
+    }
+
+    static keyPressed(key) {
+        if (typeof key !== "string" && typeof key !== "number") throw new Error("KeyCode.wasKeyDown: Bad argument #1: string or number expected, got " + typeof key);
+        if (this[key]) {
+            // Return if released this frame and down last frame
+            return !this._downKeys.get(key) && this._lastDownKeys.get(key);
+        }
+        return false;
+    }
+}
+
+Math.clamp = function(x, min, max) {
+    if (typeof x !== "number") throw new Error('Math.clamp: bad argument #1: number expected, got ' + typeof x);
+    if (typeof min !== "number") throw new Error('Math.clamp: bad argument #2: number expected, got ' + typeof min);
+    if (typeof max !== "number") throw new Error('Math.clamp: bad argument #3: number expected, got ' + typeof max);
+    return Math.min(Math.max(x, min), max);
+}
+
 // inrange(point, start, end)
 // -> Check if the point is within the bounds of start and end
 //      Vector point: the point we want to check the position of
@@ -522,6 +700,7 @@ ngf.context = null; // What this framework draws to
 ngf.fps = 0; // 0 is as many frames as possible. Any higher number is the actual FPS
 ngf.tickRate = 66; // How many times an entity "thinks" every second
 ngf.onFrameRender = []; // User defined functions to run every frame
+ngf.clearFrame = true; // Should the frame be cleared before redrawing?
 
 
 // Now functions and classes that require the variables above
@@ -552,9 +731,11 @@ function setCanvas(id) {
     // Keep track of whether or not the mouse is clicked
     ngf.canvas.onmousedown = function() {
         ngf.mouse.down = true;
+        ngf.canvas.focus();
     }
-    ngf.canvas.onmouseup = function() {
+    ngf.canvas.onmouseup = function(e) {
         ngf.mouse.down = false;
+        ngf.canvas.focus();
     }
 
     // Reset values if the mouse isn't even on the canvas
@@ -562,6 +743,23 @@ function setCanvas(id) {
         ngf.mouse.down = false;
         ngf.mouse.pos.set(-1);
     }
+
+    ngf.canvas.onkeydown = function(e) {
+        if (KeyCode[e.key] || KeyCode[e.code]) {
+            KeyCode._downKeys.set(e.code, true);
+            KeyCode._downKeys.set(e.key, true);
+            KeyCode._downKeys.set(e.keyCode, true);
+        }
+    }
+    ngf.canvas.onkeyup = function(e) {
+        if (KeyCode._downKeys.get(e.code)) {
+            KeyCode._downKeys.set(e.code, false);
+            KeyCode._downKeys.set(e.key, false);
+            KeyCode._downKeys.set(e.keyCode, false);
+        }
+    }
+
+    ngf.canvas.focus();
 
     // Default context stuff
     ngf.context = canvas.getContext("2d");
@@ -591,13 +789,13 @@ function setCanvas(id) {
             ✓ Circle
             ✓ Line
             ✓ Poly
-        Animation
+        - Animation
         NPC
         PlayerController
 
 */
 
-// Functions easing animations. Referenced from https://www.febucci.com/2018/08/easing-functions/
+// Functions easing animations. Referenced from https://easings.net/
 function easeInOut(value, exponent) {
     if (typeof value !== "number")    throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
     if (typeof exponent !== "number") throw new Error("easeIn: Bad argument #2: Expected a number, got " + typeof exponent);
@@ -706,6 +904,37 @@ class Graphic extends Entity {
         return animY;
     }
 
+    curveTo(pos, duration = 1000, ease, onFinish) {
+        if (!(pos instanceof Vector)) throw new Error("<Graphic>.curveTo: Bad argument #1: Expected a Vector, got " + typeof pos);
+
+        let animX = new Animation();
+        let animY = new Animation();
+        
+        animX.object = this.pos;
+        animY.object = this.pos;
+        
+        animX.modifying = 0;
+        animY.modifying = 1;
+        
+        animX.start = this.pos[0];
+        animY.start = this.pos[1];
+        
+        animX.end = pos[0];
+        animY.end = pos[1];
+        
+        if (typeof duration === "number") animX.duration = duration;
+        if (typeof duration === "number") animY.duration = duration;
+        
+        animX.ease = 2;
+        if (typeof ease === "number") animX.ease = ease;
+
+        if (onFinish instanceof Function) animY.onFinish = onFinish;
+
+        animX.startAnim();
+        animY.startAnim();
+        return animY;
+    }
+
     colorTo(col, duration = 1000, ease, onFinish) {
         if (!(col instanceof Color)) throw new Error("<Graphic>.colorTo: Bad argument #1: Expected a Color, got " + typeof col);
 
@@ -801,6 +1030,7 @@ class Box extends Graphic {
 
         if (!(this.size instanceof Vector)) this.size = new Vector(16);
         if (typeof this.cornerRadius !== "number") this.cornerRadius = 0;
+        if (typeof this.drawMask !== "boolean") this.drawMask = true;
     }
     
     sizeTo(size, duration = 1000, ease, onFinish) {
@@ -1183,11 +1413,13 @@ for (let i = 0; i < ngf.frameRenderTracking; i++) {
 function drawFrame() {
     let startTime = Date.now();
     if (ngf.context) { // We can only render if there is a context, however we don't want to error if it's not set
-        ngf.context.clearRect(0, 0, ngf.canvas.width, ngf.canvas.height);
+        if (ngf.clearFrame) {
+            ngf.context.clearRect(0, 0, ngf.canvas.width, ngf.canvas.height);
         
-        // Ensure the background is black
-        ngf.context.fillStyle = "rgb(0,0,0)";
-        ngf.context.fillRect(0, 0, ngf.canvas.width, ngf.canvas.height);
+            // Ensure the background is black
+            ngf.context.fillStyle = "rgb(0,0,0)";
+            ngf.context.fillRect(0, 0, ngf.canvas.width, ngf.canvas.height);
+        }
 
         // Loop through all animations and update them before drawing the frame
         ngf.animations.forEach((anim, id, map) => {
@@ -1201,6 +1433,7 @@ function drawFrame() {
         // Loop through all entities and call .draw
         ngf.entities.forEach((ent, id, map) => {
             if (ent instanceof Graphic) { // Only draw if it's a graphic entity
+                if (ent.thinkFrame instanceof Function) ent.thinkFrame();
                 if (ent.visible && ent.draw instanceof Function) {
                     let [w, h] = [0, 0];
                     if (ent.size instanceof Vector) {
@@ -1280,6 +1513,8 @@ function tick() {
             if (ent.enabled && ent.think instanceof Function) ent.think();
         }
     });
+
+    KeyCode._downKeysLast = new Map(KeyCode._downKeys);
 
     setTimeout(tick, Math.round(1000/ngf.tickRate));
 }
