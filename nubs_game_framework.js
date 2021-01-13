@@ -9,19 +9,6 @@
 
 // Some basic functions
 
-// lerp, Linear Interpolation
-// -> Used for transitions, used in animations.
-//      Number x: the start number
-//      Number y: the end number
-//      Number p: the progress %; should be a number between 0 and 1
-// -> Returns a number (float format)
-function lerp(start, end, prog) {
-    if (typeof start !== "number") throw new Error("lerp: bad argument #1: expected a number, got " + typeof start);
-    if (typeof end !== "number") throw new Error("lerp: bad argument #2: expected a number, got " + typeof end);
-    if (typeof prog !== "number") throw new Error("lerp: bad argument #3: expected a number, got " + typeof prog);
-    return start + prog * (end - start);
-}
-
 // Vectors, used for positions and sizes. 
 // Since the usage would be a bit lengthy, please see https://github.com/that1nub/Nubs-Canvas-Game-Framework-2.0/wiki/Class:-Vector
 class Vector {
@@ -66,6 +53,12 @@ class Vector {
 
     get array() {return [this[0], this[1]];}
     get object() {return {x: this[0], y: this[1], w: this[0], h: this[1]};}
+
+    inrange(min, max) {
+        if (!(min instanceof Vector)) throw new Error("Vector.inrange: bad argument #1: epxected a Vector, got " + typeof min);
+        if (!(max instanceof Vector)) throw new Error("Vector.inrange: bad argument #2: epxected a Vector, got " + typeof max);
+        return Math.inrange(this[0], min[0], max[0]) && Math.inrange(this[1], min[1], max[1])
+    }
 
     static add(a, b) {
         if (!(a instanceof Vector)) throw new Error("Vector.add: bad argument #1: Expected a Vector, got " + typeof a);
@@ -129,7 +122,7 @@ class Vector {
     }
 
     static rotate(a, angle, origin) {
-        if (!(a instanceof Vector)) throw new Error("Vector.lerp: bad argument #1: Expected a Vector, got " + typeof a);
+        if (!(a instanceof Vector)) throw new Error("Vector.rotate: bad argument #1: Expected a Vector, got " + typeof a);
         if (typeof angle !== "number")   throw new Error("Vector.rotate: bad argument #2: Expected a number, got " + typeof angle);
         let rad = (Math.PI / 180) * angle;
         let cos = Math.cos(rad);
@@ -163,37 +156,6 @@ class Vector {
     }
 }
 
-function hexToRGBA(hex) {
-    if (typeof hex !== "string") throw new Error("The value of your input hex must be a string.");
-    hex = hex.replace(/#/g, '');
-
-    let out = [];
-
-    switch (hex.length) {
-        // #rgb(a)
-        case 3: case 4: {
-            out.push(parseInt(hex[0] + hex[0], 16));
-            out.push(parseInt(hex[1] + hex[1], 16));
-            out.push(parseInt(hex[2] + hex[2], 16));
-            if (hex[3]) out.push(parseInt(hex[3] + hex[3], 16));
-        } break;
-
-        // #rrggbb(aa)
-        case 6: case 8: {
-            out.push(parseInt(hex.substring(0, 2), 16));
-            out.push(parseInt(hex.substring(2, 4), 16));
-            out.push(parseInt(hex.substring(4, 6), 16));
-            if (hex[7]) out.push(parseInt(hex.substring(6, 8), 16));
-        } break;
-
-        default: {
-            throw new Error("hexToRGBA: Bad argument #1: Invalid hexadecimal specified.");
-        } break;
-    }
-
-    return out;
-}
-
 // Colors, used for coloring entities.
 // Since the usage would be a bit length, please see [not yet created]
 class Color {
@@ -211,11 +173,11 @@ class Color {
             break;
 
             case "string":
-                let col = hexToRGBA(r);
-                red   = col[0];
-                green = col[1];
-                blue  = col[2];
-                if (col[3] !== undefined) alpha = col[3];
+                let col = Color.fromHex(r);
+                this[0] = col[0];
+                this[1] = col[1];
+                this[2] = col[2];
+                this[3] = col[3];
             break;
 
             default:
@@ -281,12 +243,12 @@ class Color {
     set blue(b)  {this.b = b;}
     set alpha(a) {this.a = a;}
 
-    set hex(hex) {
-        let col = hexToRGBA(hex);
+    set hex(hex) {  
+        let col = Color.fromHex(hex);
         this[0] = col[0];
         this[1] = col[1];
         this[2] = col[2];
-        if (col[3] !== undefined) this[3] = col[3];
+        this[3] = col[3];
     }
 
     set (r, g = r, b = r, a) {
@@ -342,6 +304,37 @@ class Color {
         this[0] /= a[0];
         this[1] /= a[1];
         this[2] /= a[2];
+    }
+
+    static fromHex = function(hex) {
+        if (typeof hex !== "string") throw new Error("Color.fromHex: Bad argument #1: expected a string hex, got " + typeof hex);
+        hex = hex.replace(/#/g, '');
+
+        let out = [];
+
+        switch (hex.length) {
+            // #rgb(a)
+            case 3: case 4: {
+                out.push(parseInt(hex[0] + hex[0], 16));
+                out.push(parseInt(hex[1] + hex[1], 16));
+                out.push(parseInt(hex[2] + hex[2], 16));
+                if (hex[3]) out.push(parseInt(hex[3] + hex[3], 16));
+            } break;
+
+            // #rrggbb(aa)
+            case 6: case 8: {
+                out.push(parseInt(hex.substring(0, 2), 16));
+                out.push(parseInt(hex.substring(2, 4), 16));
+                out.push(parseInt(hex.substring(4, 6), 16));
+                if (hex[7]) out.push(parseInt(hex.substring(6, 8), 16));
+            } break;
+
+            default: {
+                throw new Error("Color.fromHex: Bad argument #1: Invalid hexadecimal specified.");
+            } break;
+        }
+
+        return new this(...out);
     }
 
     // I used a node script to generate this :^)
@@ -735,6 +728,19 @@ class KeyCode {
     static _lastDownKeys = new Map(); // The keys that were pressed in the previous frame (tick)
 }
 
+class MouseCode {
+    static left   = 0;
+    static middle = 1;
+    static right  = 2;
+
+    static [0] = 0;
+    static [1] = 1;
+    static [2] = 2;
+
+    static _down = new Map(); // Current mouse buttons pressed
+    static _lastDown = new Map(); // Mouse buttons pressed in the previous frame
+}
+
 class Input {
     static isKeyDown(key) {
         if (typeof key !== "string" && typeof key !== "number") throw new Error("KeyCode.isKeyDown: Bad argument #1: string or number expected, got " + typeof key);
@@ -742,13 +748,40 @@ class Input {
     }
 
     static keyPressed(key) {
-        if (typeof key !== "string" && typeof key !== "number") throw new Error("KeyCode.wasKeyDown: Bad argument #1: string or number expected, got " + typeof key);
+        if (typeof key !== "string" && typeof key !== "number") throw new Error("KeyCode.keyPressed: Bad argument #1: string or number expected, got " + typeof key);
         if (KeyCode[key]) {
             // Return if released this frame and down last frame
             return !KeyCode._downKeys.get(key) && KeyCode._lastDownKeys.get(key);
         }
         return false;
     }
+
+    static isMouseButtonDown(btn) {
+        if (typeof btn !== "string" && typeof btn !== "number") throw new Error("MouseCode.isMouseButtonDown: Bad argument #1: string or number expected, got " + typeof btn);
+        return MouseCode._down.get(btn);
+    }
+
+    static mouseButtonPressed(btn) {
+        if (typeof btn !== "string" && typeof btn !== "number") throw new Error("MouseCode.mouseButtonPressed: Bad argument #1: string or number expected, got " + typeof btn);
+        if (MouseCode[btn]) {
+            // Return if released this frame and down last frame
+            return !MouseCode._down.get(btn) && MouseCode._lastDown.get(btn);
+        }
+        return false;
+    }
+}
+
+// lerp, Linear Interpolation
+// -> Used for transitions, used in animations.
+//      Number x: the start number
+//      Number y: the end number
+//      Number p: the progress %; should be a number between 0 and 1
+// -> Returns a number (float format)
+Math.lerp = function(start, end, prog) {
+    if (typeof start !== "number") throw new Error("lerp: bad argument #1: expected a number, got " + typeof start);
+    if (typeof end !== "number") throw new Error("lerp: bad argument #2: expected a number, got " + typeof end);
+    if (typeof prog !== "number") throw new Error("lerp: bad argument #3: expected a number, got " + typeof prog);
+    return start + prog * (end - start);
 }
 
 Math.clamp = function(x, min, max) {
@@ -758,18 +791,11 @@ Math.clamp = function(x, min, max) {
     return Math.min(Math.max(x, min), max);
 }
 
-// inrange(point, start, end)
-// -> Check if the point is within the bounds of start and end
-//      Vector point: the point we want to check the position of
-//      Vector start: the upper left corner of the box we are checking for the point to be in
-//      Vector end: the lower right corner of the box we are checking for the point to be in
-// -> Returns a boolean
-function inrange(point, start, end) {
-    if (!(point instanceof Vector)) throw new Error("inrange: bad argument #1: expected a Vector, got " + typeof point);
-    if (!(start instanceof Vector)) throw new Error("inrange: bad argument #2: expected a Vector, got " + typeof start);
-    if (!(end instanceof Vector))   throw new Error("inrange: bad argument #3: expected a Vector, got " + typeof end);
-
-    return (point[0] >= start[0] && point[0] <= start[0] + end[0]) && (point[1] >= start[1] && point[1] <= start[1] + end[1]);
+Math.inrange = function(x, min, max) {
+    if (typeof x !== "number") throw new Error('Math.inrange: bad argument #1: number expected, got ' + typeof x);
+    if (typeof min !== "number") throw new Error('Math.inrange: bad argument #2: number expected, got ' + typeof min);
+    if (typeof max !== "number") throw new Error('Math.inrange: bad argument #3: number expected, got ' + typeof max);
+    return (x >= min && x <= max);
 }
 
 // A table that contains all of the essential framework variables
@@ -779,7 +805,6 @@ ngf.entities = new Map(); // Map of all objects
 ngf.entCount = 0; // We could use ngf.entities.size, but if a random entity is deleted, new entities will be deleted, so we just store a count that doesn't decrement
 ngf.renderedEnts = new Set(); // We will store rendering objects in this set so they aren't rendered twice. Cleared at the end of every frame.
 ngf.animations = new Map(); // Map of all running animations
-ngf.mouse = {pos: new Vector(-1), down: false}; // Tracks the mouse for user input
 ngf.canvas = null; // The canvas the mouse is tracked to
 ngf.context = null; // What this framework draws to
 ngf.fps = 60; // 0 is as many frames as possible. Any higher number is the actual FPS. 0 is not recommended, the deltaTime will be incorrect.
@@ -787,17 +812,21 @@ ngf.tickRate = 66; // How many times an entity "thinks" every second
 ngf.onFrameRender = []; // User defined functions to run every frame
 ngf.clearFrame = true; // Should the frame be cleared before redrawing?
 
+class Mouse { // used to track the mouse around the canvas for inputs
+    static pos = new Vector(-1);
+    static down = false;
+
+    // Function used to check if the mouse is hovering a certain object. Will become more indepth later to include overlapping objects
+    static isHovering = function(ent) {
+        if (!(ent instanceof Entity)) throw new Error("Mouse.isHovering: bad argument #1: expected an entity, got " + typeof obj);
+        if (!ent.pos)                 throw new Error("Mouse.isHovering: bad argument #1: invalid entity supplied, has no position.");
+        if (!ent.size)                throw new Error("Mouse.isHovering: bad argument #1: invalid entity supplied, has no size.");
+        return Mouse.pos.inrange(ent.pos, ent.size);
+    }
+}
+
 
 // Now functions and classes that require the variables above
-
-// Function used to check if the mouse is hovering a certain object. Will become more indepth later to include overlapping objects
-ngf.mouse.hovering = function(obj) {
-    if (!(obj instanceof Entity)) throw new Error("ngf.mouse.hovering: bad argument #1: expected an entity, got " + typeof obj);
-    if (!obj.pos)                 throw new Error("ngf.mouse.hovering: bad argument #1: invalid entity supplied, has no position.");
-    if (!obj.size)                throw new Error("ngf.mouse.hovering: bad argument #1: invalid entity supplied, has no size.");
-
-    return inrange(ngf.mouse.pos, obj.pos, obj.size);
-}
 
 function setCanvas(id) {
     // Find the HTML element with this ID, or error if it can't find one
@@ -809,28 +838,40 @@ function setCanvas(id) {
     // Keep track of the mouse position for hover detection
     ngf.canvas.onmousemove = function(e) {
         let rect = this.getBoundingClientRect();
-        ngf.mouse.pos[0] = (e.clientX - rect.x) / rect.width * this.width;
-        ngf.mouse.pos[1] = (e.clientY - rect.y) / rect.height * this.height;
+        Mouse.pos[0] = (e.clientX - rect.x) / rect.width * this.width;
+        Mouse.pos[1] = (e.clientY - rect.y) / rect.height * this.height;
     }
 
     // Keep track of whether or not the mouse is clicked
-    ngf.canvas.onmousedown = function() {
-        ngf.mouse.down = true;
+    ngf.canvas.onmousedown = function(e) {
+        Mouse.down = true;
         ngf.canvas.focus();
+
+        if (MouseCode[e.button] !== undefined) {
+            MouseCode._down.set(e.button, true);
+        }
     }
     ngf.canvas.onmouseup = function(e) {
-        ngf.mouse.down = false;
+        Mouse.down = false;
         ngf.canvas.focus();
+        if (MouseCode._down.get(e.button)) {
+            MouseCode._down.set(e.button, false);
+        }
+    }
+    ngf.canvas.oncontextmenu = function(e) {
+        e.stopPropagation();
+        e.cancelBubble = true;
+        return false;
     }
 
     // Reset values if the mouse isn't even on the canvas
     ngf.canvas.onmouseout = function() {
-        ngf.mouse.down = false;
-        ngf.mouse.pos.set(-1);
+        Mouse.down = false;
+        Mouse.pos.set(-1);
     }
 
     ngf.canvas.onkeydown = function(e) {
-        if (KeyCode[e.key] || KeyCode[e.code]) {
+        if (KeyCode[e.key] !== undefined || KeyCode[e.code] !== undefined) {
             KeyCode._downKeys.set(e.code, true);
             KeyCode._downKeys.set(e.key, true);
             KeyCode._downKeys.set(e.keyCode, true);
@@ -1069,7 +1110,7 @@ class Graphic extends Entity {
 
     think() {
         // Check if the mouse is hovering this entity. If so, we want to do hover and click events
-        if (this.pos instanceof Vector && this.size instanceof Vector && ngf.mouse.hovering(this)) {
+        if (this.pos instanceof Vector && this.size instanceof Vector && Mouse.isHovering(this)) {
             // Since we are hovering, check if we're hovering and run .onHoverStart()
             if (!this._isHovered) {
                 this._isHovered = true;
@@ -1080,7 +1121,7 @@ class Graphic extends Entity {
             if (this.whileHovered instanceof Function) this.whileHovered(Date.now() - this._hoverStart);
 
             // Check if the mouse is clicked. If so, we want to do click events
-            if (ngf.mouse.down) {
+            if (Mouse.down) {
                 // Since the mouse is clicked, run the .onMouseDown() event
                 if (!this._isDown) {
                     this._isDown = true;
@@ -1477,7 +1518,7 @@ class Animation extends Entity {
 
         let prog = this.ease !== 1 ? easeInOut(this.progress, this.ease) : this.progress;
 
-        this.object[this.modifying] = lerp(this.start, this.end, prog);
+        this.object[this.modifying] = Math.lerp(this.start, this.end, prog);
 
         if (this.onUpdate instanceof Function) this.onUpdate(this.progress);
     }
@@ -1585,6 +1626,17 @@ function drawFrame() {
         if (ngf.onFrameRender[i] instanceof Function) ngf.onFrameRender[i]();
     }
 
+    // Update the last down keys to the current down keys
+    KeyCode._lastDownKeys.clear();
+    MouseCode._lastDown.clear();
+
+    for (let [key, value] of KeyCode._downKeys) {
+        KeyCode._lastDownKeys.set(key, value);
+    }
+    for (let [key, value] of MouseCode._down) {
+        MouseCode._lastDown.set(key, value);
+    }
+
     // Start the next frame
     if (ngf.fps > 0) {
         setTimeout(() => {
@@ -1602,8 +1654,6 @@ function tick() {
             if (ent.enabled && ent.think instanceof Function) ent.think();
         }
     });
-
-    KeyCode._downKeysLast = new Map(KeyCode._downKeys);
 
     setTimeout(tick, Math.round(1000/ngf.tickRate));
 }
