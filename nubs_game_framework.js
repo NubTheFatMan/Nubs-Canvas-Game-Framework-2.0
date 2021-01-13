@@ -495,6 +495,7 @@ class Color {
     static rebeccapurple = new this("#663399ff");
 }
 
+// Because the input system is inspired by Unity's input system, these are classes instead of Objects
 class KeyCode {
     // All these keys were either generated using a node script, or manually recorded
     static KeyA = 65;
@@ -551,6 +552,33 @@ class KeyCode {
     static y = 89;
     static z = 90;
 
+    static [65] = 65;
+    static [66] = 66;
+    static [67] = 67;
+    static [68] = 68;
+    static [69] = 69;
+    static [70] = 70;
+    static [71] = 71;
+    static [72] = 72;
+    static [73] = 73;
+    static [74] = 74;
+    static [75] = 75;
+    static [76] = 76;
+    static [77] = 77;
+    static [78] = 78;
+    static [79] = 79;
+    static [80] = 80;
+    static [81] = 81;
+    static [82] = 82;
+    static [83] = 83;
+    static [84] = 84;
+    static [85] = 85;
+    static [86] = 86;
+    static [87] = 87;
+    static [88] = 88;
+    static [89] = 89;
+    static [90] = 90;
+
     static Digit0 = 48;
     static Digit1 = 49;
     static Digit2 = 50;
@@ -561,6 +589,17 @@ class KeyCode {
     static Digit7 = 55;
     static Digit8 = 56;
     static Digit9 = 57;
+
+    static [48] = 48;
+    static [49] = 49;
+    static [50] = 50;
+    static [51] = 51;
+    static [52] = 52;
+    static [53] = 53;
+    static [54] = 54;
+    static [55] = 55;
+    static [56] = 56;
+    static [57] = 57;
 
     static ['0'] = 48;
     static ['1'] = 49;
@@ -584,83 +623,129 @@ class KeyCode {
     static Numpad8 = 104;
     static Numpad9 = 105;
 
+    static [96] = 96;
+    static [97] = 97;
+    static [98] = 98;
+    static [99] = 99;
+    static [100] = 100;
+    static [101] = 101;
+    static [102] = 102;
+    static [103] = 103;
+    static [104] = 104;
+    static [105] = 105;
+
     static NumpadDecimal  = 110;
     static NumpadAdd      = 107;
     static NumpadSubtract = 109;
     static NumpadMultiply = 106;
     static NumpadDivide   = 111;
 
+    static [110] = 110;
+    static [107] = 107;
+    static [109] = 109;
+    static [106] = 106;
+    static [111] = 111;
+
     static ArrowLeft  = 37;
     static ArrowUp    = 38;
     static ArrowRight = 39;
     static ArrowDown  = 40;
 
+    static [37] = 37;
+    static [38] = 38;
+    static [39] = 39;
+    static [40] = 40;
+
     static Enter       = 13;
     static NumpadEnter = 13;
+    
+    static [13] = 13;
 
     static Shift      = 16;
-    static ShiftLeft  = 16;
-    static ShiftRight = 16;
-
+    static ShiftLeft  = "ShiftLeft";
+    static ShiftRight = "ShiftRight";
+    
     static Control      = 17;
-    static ControlLeft  = 17;
-    static ControlRight = 17;
-
+    static ControlLeft  = "ControlLeft";
+    static ControlRight = "ControlRight";
+    
     static Alt      = 18;
-    static AltLeft  = 18;
-    static AltRight = 18;
+    static AltLeft  = "AltLeft";
+    static AltRight = "AltRight";
+
+    static [16] = 16;
+    static [17] = 17;
+    static [18] = 18;
 
     static Backspace = 8;
     static Space     = 32;
     static CapsLock  = 20;
     static [' ']     = 32;
 
+    static [8] = 8;
+    static [32] = 32;
+    static [20] = 20;
+
     static BracketLeft  = 219;
     static BracketRight = 221;
     static ['[']        = 219;
     static [']']        = 221;
 
-    static Minus = 189;
+    static [219] = 219;
+    static [221] = 221;
+
     static Equal = 187;
-    static ['-'] = 189;
+    static Minus = 189;
     static ['='] = 187;
+    static ['-'] = 189;
+
+    static [187] = 187
+    static [189] = 189;
 
     static Semicolon = 186;
     static Quote     = 222;
     static [';']     = 186;
-    static ["'"]     = 186;
+    static ["'"]     = 222;
+
+    static [186] = 186;
+    static [222] = 222;
 
     static Comma  = 188;
     static Period = 190;
     static [',']  = 188;
     static ['.']  = 190;
 
+    static [188] = 188;
+    static [190] = 190;
+
     static Slash     = 191;
     static Backslash = 220;
     static ['/']     = 191;
     static ['\\']    = 220;
 
+    static [191] = 191;
+    static [220] = 220;
+
     static Backquote = 192;
     static ['`']     = 192;
 
+    static [192] = 192;
+
     static _downKeys = new Map(); // Current keys that are pressed
     static _lastDownKeys = new Map(); // The keys that were pressed in the previous frame (tick)
+}
 
+class Input {
     static isKeyDown(key) {
         if (typeof key !== "string" && typeof key !== "number") throw new Error("KeyCode.isKeyDown: Bad argument #1: string or number expected, got " + typeof key);
-        return this._downKeys.get(key);
-    }
-
-    static wasKeyDown(key) {
-        if (typeof key !== "string" && typeof key !== "number") throw new Error("KeyCode.wasKeyDown: Bad argument #1: string or number expected, got " + typeof key);
-        return this._lastDownKeys.get(key);
+        return KeyCode._downKeys.get(key);
     }
 
     static keyPressed(key) {
         if (typeof key !== "string" && typeof key !== "number") throw new Error("KeyCode.wasKeyDown: Bad argument #1: string or number expected, got " + typeof key);
-        if (this[key]) {
+        if (KeyCode[key]) {
             // Return if released this frame and down last frame
-            return !this._downKeys.get(key) && this._lastDownKeys.get(key);
+            return !KeyCode._downKeys.get(key) && KeyCode._lastDownKeys.get(key);
         }
         return false;
     }
@@ -697,7 +782,7 @@ ngf.animations = new Map(); // Map of all running animations
 ngf.mouse = {pos: new Vector(-1), down: false}; // Tracks the mouse for user input
 ngf.canvas = null; // The canvas the mouse is tracked to
 ngf.context = null; // What this framework draws to
-ngf.fps = 0; // 0 is as many frames as possible. Any higher number is the actual FPS
+ngf.fps = 60; // 0 is as many frames as possible. Any higher number is the actual FPS. 0 is not recommended, the deltaTime will be incorrect.
 ngf.tickRate = 66; // How many times an entity "thinks" every second
 ngf.onFrameRender = []; // User defined functions to run every frame
 ngf.clearFrame = true; // Should the frame be cleared before redrawing?
@@ -1479,6 +1564,10 @@ function drawFrame() {
     let endTime = Date.now();
 
     let deltaTime = endTime - startTime;
+    if (ngf.fps > 0) {
+        deltaTime += 1000/ngf.fps;
+    }
+
     ngf.frameRenderIndex++;
     ngf.frameRenderTime[ngf.frameRenderIndex] = deltaTime;
 
