@@ -157,7 +157,7 @@ class Vector {
 }
 
 // Colors, used for coloring entities.
-// Since the usage would be a bit length, please see [not yet created]
+// Since the usage would be a bit lengthy, please see [not yet created]
 class Color {
     constructor (r = 0, g = r, b = r, a = 255) {
         let [red, green, blue, alpha] = [0, 0, 0, 255];
@@ -174,10 +174,10 @@ class Color {
 
             case "string":
                 let col = Color.fromHex(r);
-                this[0] = col[0];
-                this[1] = col[1];
-                this[2] = col[2];
-                this[3] = col[3];
+                red   = col[0];
+                green = col[1];
+                blue  = col[2];
+                alpha = col[3];
             break;
 
             default:
@@ -256,6 +256,93 @@ class Color {
         if (typeof g === "number") this[1] = g;
         if (typeof b === "number") this[2] = b;
         if (typeof a === "number") this[3] = a;
+    }
+
+    get hsl() {
+        let hsl = this.hslArray;
+        return "hsl(" + [hsl[0], hsl[1] * 100, hsl[2] * 100].join(',') + ")"
+    }
+    get hslArray() {
+        // Math of this function is from https://www.niwa.nu/2013/05/math-behind-colorspace-conversions-rgb-hsl/
+        let [r, g, b] = [this[0], this[1], this[2]];
+        
+        let R = r/255;
+        let G = g/255;
+        let B = b/255;
+
+        let min = Math.min(R, G, B);
+        let max = Math.max(R, G, B);
+        let dif = max - min;
+        let sum = max + min;
+
+        let L = sum / 2;
+
+        let S = 0;
+        let H = 0;
+        if (min === max) { // We don't need to calculate the Hue or Saturation if the min and max are the same
+            return [H, S, L];
+        } else {
+            if (L <= 0.5) {
+                S = dif / sum;
+            } else {
+                S = dif / (2 - dif);
+            }
+        }
+
+        if      (R === max) H =     (G - B) / dif;
+        else if (G === max) H = 2 + (B - R) / dif;
+        else if (B === max) H = 4 + (R - G) / dif;
+
+        // Now convert to degrees
+        H *= 60;
+        return [Math.round(H), S, L];
+    }
+
+    static _testValue(v, t1, t2) {
+        // Math of this function is from https://www.niwa.nu/2013/05/math-behind-colorspace-conversions-rgb-hsl/
+        if (6 * v < 1) return t2 + (t1 - t2) * 6 * v;
+        else if (6 * v > 1) {
+            if (2 * v < 1) return t1;
+            else if (2 * v > 1) {
+                if (3 * v < 2) return t2 + (t1 - t2) * (0.666 - v) * 6;
+                else if (3 * v > 2) return t2;
+            }
+        }
+    }
+
+    static hslToRGB(h, s, l) {
+        // Math of this function is from https://www.niwa.nu/2013/05/math-behind-colorspace-conversions-rgb-hsl/
+        if (s === 0) return new this(Math.round(l * 255));
+
+        let temp1 = 0;
+        if (l < 0.5) temp1 = l * (1 + s);
+        else temp1 = l + s - l * s
+
+        let temp2 = 2 * l - temp1;
+
+        let hue = h / 360;
+
+        let tempR = hue + 0.333;
+        let tempG = hue;
+        let tempB = hue - 0.333;
+
+        if (tempR < 0) tempR += 1;
+        else if (tempR > 1) tempR -= 1;
+
+        if (tempG < 0) tempG += 1;
+        else if (tempG > 1) tempG -= 1;
+
+        if (tempB < 0) tempB += 1;
+        else if (tempB > 1) tempB -= 1;
+
+        let r = this._testValue(tempR, temp1, temp2);
+        let g = this._testValue(tempG, temp1, temp2);
+        let b = this._testValue(tempB, temp1, temp2);
+
+        r = Math.round(r * 255);
+        g = Math.round(g * 255);
+        b = Math.round(b * 255);
+        return new this(r, g, b);
     }
 
     static add(a, b) {
@@ -904,13 +991,15 @@ function setCanvas(id) {
     - Entity
         - Graphic
             - Box
-                ✓ Button
-                CheckBox
-                DropDownMenu
-                TextEntry
-                Slider
+                - Button
+                    CheckBox
+                    DropDownMenu
+                    TextEntry
+                    Slider
                 - Img
                     SpriteSheet
+                Gradient
+                    ColorMixer
             ✓ Text
             ✓ Circle
             ✓ Line
@@ -1281,6 +1370,21 @@ class Button extends Box {
         let hei = Number(ngf.context.font.match(/[0-9]+/g)[0]) || 0;
 
         ngf.context.fillText(this.text, (w/2) - wid/2, (h/2) + hei/3);
+    }
+}
+
+class CheckBox extends Button {
+    constructor(data) {
+        super(data);
+
+        if (typeof this.style !== "string") this.style = "box";
+        if (!(this.tickColor instanceof Color)) this.tickColor = new Color();
+    }
+
+    draw(w, h) {
+        super.draw(w, h);
+
+        
     }
 }
 
