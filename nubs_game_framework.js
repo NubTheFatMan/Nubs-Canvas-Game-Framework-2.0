@@ -48,7 +48,7 @@ class Vector {
     }
 
     get copy() {
-        return new this(this[0], this[1]);
+        return new this.constructor(this[0], this[1]);
     }
 
     get array() {return [this[0], this[1]];}
@@ -184,10 +184,10 @@ class Color {
                 throw new Error("Color: Bad argument #1: Expected a string or number, got " + typeof r);
             break;
         }
-        this[0] = red;
-        this[1] = green;
-        this[2] = blue;
-        this[3] = alpha;
+        this[0] = Math.clamp(red, 0, 255);
+        this[1] = Math.clamp(green, 0, 255);
+        this[2] = Math.clamp(blue, 0, 255);
+        this[3] = Math.clamp(alpha, 0, 255);
         this.length = 4; // Allow looping if necessary
     }
 
@@ -290,19 +290,19 @@ class Color {
 
     set r(r) {
         if (typeof r !== "number") throw new Error("The value of red must be a number.");
-        this[0] = r;
+        this[0] = Math.clamp(r, 0, 255);
     };
     set g(g) {
         if (typeof g !== "number") throw new Error("The value of green must be a number.");
-        this[1] = g;
+        this[1] = Math.clamp(g, 0, 255);
     };
     set b(b) {
         if (typeof b !== "number") throw new Error("The value of blue must be a number.");
-        this[2] = b;
+        this[2] = Math.clamp(b, 0, 255);
     };
     set a(a) {
         if (typeof a !== "number") throw new Error("The value of alpha must be a number.");
-        this[3] = a;
+        this[3] = Math.clamp(a, 0, 255);
     };
 
     set red(r)   {this.r = r;}
@@ -357,6 +357,7 @@ class Color {
         if (typeof g === "number") this[1] = g;
         if (typeof b === "number") this[2] = b;
         if (typeof a === "number") this[3] = a;
+        this._verifybounds();
     }
 
     static _testValue(v, t1, t2) {
@@ -375,6 +376,11 @@ class Color {
         if (typeof h !== "number") throw new Error("The hue must be a number.");
         if (typeof s !== "number") throw new Error("The saturation must be a number.");
         if (typeof l !== "number") throw new Error("The luminance must be a number.");
+
+        h = Math.clamp(h, 0, 360);
+        s = Math.clamp(s, 0, 1);
+        l = Math.clamp(l, 0, 1);
+
         // Math of this function is from https://www.niwa.nu/2013/05/math-behind-colorspace-conversions-rgb-hsl/
         if (s === 0) return new this(Math.round(l * 255));
 
@@ -431,6 +437,7 @@ class Color {
         } else {
             throw new Error("Color.add: bad argument #1: Expected a Color or number, got " + typeof a);
         }
+        this._verifybounds();
     }
 
     static sub(a, b) {
@@ -451,6 +458,7 @@ class Color {
         } else {
             throw new Error("Color.sub: bad argument #1: Expected a Color or number, got " + typeof a);
         }
+        this._verifybounds();
     }
     
     static mult(a, b) {
@@ -471,6 +479,7 @@ class Color {
         } else {
             throw new Error("Color.mult: bad argument #1: Expected a Color or number, got " + typeof a);
         }
+        this._verifybounds();
     }
 
     static div(a, b) {
@@ -491,6 +500,7 @@ class Color {
         } else {
             throw new Error("Color.div: bad argument #1: Expected a Color or number, got " + typeof a);
         }
+        this._verifybounds();
     }
 
     static blend(a, b, mix = 0.5) {
@@ -535,6 +545,13 @@ class Color {
         }
 
         return new this(...out);
+    }
+
+    _verifybounds() {
+        this[0] = Math.clamp(this[0], 0, 255);
+        this[1] = Math.clamp(this[1], 0, 255);
+        this[2] = Math.clamp(this[2], 0, 255);
+        this[3] = Math.clamp(this[3], 0, 255);
     }
 
     // I used a node script to generate this :^)
@@ -1002,7 +1019,7 @@ Math.lerp = function(start, end, prog) {
     return start + prog * (end - start);
 }
 
-Math.clamp = function(x, min, max) {
+Math.clamp = function(x, min = 0, max = 1) {
     if (typeof x !== "number") throw new Error('Math.clamp: bad argument #1: number expected, got ' + typeof x);
     if (typeof min !== "number") throw new Error('Math.clamp: bad argument #2: number expected, got ' + typeof min);
     if (typeof max !== "number") throw new Error('Math.clamp: bad argument #3: number expected, got ' + typeof max);
@@ -1764,6 +1781,7 @@ ngf.frameRenderTracking = 50; // The previous frame render times to keep track o
 ngf.frameRenderIndex = -1;    // Internal, the current index in the measurement array
 ngf.frameRenderTime = [];     // Cache of previous render times
 ngf.deltaTime = 0;            // Calculated at the end of a frame render
+ngf.rawDeltaTime = 0;         // The raw last delta time of the previous frame
 
 // Fill the render time so it is constantly the same length
 for (let i = 0; i < ngf.frameRenderTracking; i++) {
@@ -1778,7 +1796,7 @@ function drawFrame() {
             ngf.context.clearRect(0, 0, ngf.canvas.width, ngf.canvas.height);
         
             // Ensure the background is black
-            ngf.context.fillStyle = "rgb(0,0,0)";
+            ngf.context.fillStyle = Color.black.rgb;
             ngf.context.fillRect(0, 0, ngf.canvas.width, ngf.canvas.height);
         }
 
@@ -1798,7 +1816,7 @@ function drawFrame() {
                 if (ent.visible && ent.draw instanceof Function) {
                     let [w, h] = [0, 0];
                     if (ent.size instanceof Vector) {
-                        [w, h] = [ent.size[0], ent.size[1]];
+                        [w, h] = ent.size.array;
                     } else if (ent.radius) {
                         [w, h] = [ent.radius, ent.radius];
                     }
@@ -1809,7 +1827,7 @@ function drawFrame() {
                         ngf.context.save();
 
                         // We want `Graphic.draw()` to be drawn from 0, 0
-                        let [x, y] = [ent.pos[0], ent.pos[1]];
+                        let [x, y] = ent.pos.array;
 
                         // Circles draw from the center
                         if (typeof ent.radius === "number") {
@@ -1839,13 +1857,13 @@ function drawFrame() {
 
     let endTime = Date.now();
 
-    let deltaTime = endTime - startTime;
+    ngf.rawDeltaTime = endTime - startTime;
     if (ngf.fps > 0) {
-        deltaTime += 1000/ngf.fps;
+        ngf.rawDeltaTime += 1000/ngf.fps;
     }
 
     ngf.frameRenderIndex++;
-    ngf.frameRenderTime[ngf.frameRenderIndex] = deltaTime;
+    ngf.frameRenderTime[ngf.frameRenderIndex] = ngf.rawDeltaTime;
 
     if (ngf.frameRenderIndex >= ngf.frameRenderTracking) ngf.frameRenderIndex = 0;
     
@@ -1873,10 +1891,11 @@ function drawFrame() {
     }
 
     // Start the next frame
-    if (ngf.fps > 0) {
+    let delay = 1000/ngf.fps - ngf.rawDeltaTime;
+    if (ngf.fps > 0 && delay > 0) {
         setTimeout(() => {
             requestAnimationFrame(drawFrame);
-        }, Math.round(1000/ngf.fps));
+        }, delay);
     } else requestAnimationFrame(drawFrame);
 }
 requestAnimationFrame(drawFrame);
