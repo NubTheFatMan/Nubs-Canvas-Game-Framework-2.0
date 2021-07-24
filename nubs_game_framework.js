@@ -222,7 +222,7 @@ class Color {
 
     get hsl() {
         let hsl = this.hslArray;
-        return "hsl(" + [hsl[0], hsl[1] * 100, hsl[2] * 100].join(',') + ")"
+        return "hsl(" + [hsl[0], (hsl[1] * 100) + "%", (hsl[2] * 100) + "%"].join(',') + ")"
     }
     get hslArray() {
         // Math of this function is from https://www.niwa.nu/2013/05/math-behind-colorspace-conversions-rgb-hsl/
@@ -410,56 +410,100 @@ class Color {
     }
 
     static hslToRGB(h, s, l) {
-        let [r, g, b] = this._hslrgbar(h, s, l);
-        return new this(r, g, b);
+        return new this(...this._hslrgbar(h, s, l));
     }
 
     static add(a, b) {
         if (!(a instanceof Color)) throw new Error("Color.add: bad argument #1: Expected a Color, got " + typeof a);
-        if (!(b instanceof Color)) throw new Error("Color.add: bad argument #2: Expected a Color, got " + typeof b);
-        return new this(a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3]);
+        if (b instanceof Color) return new this(a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3]);
+        else if (typeof b === "number") return new this(a[0] + b, a[1] + b, a[2] + b, a[3]);
+        else throw new Error("Color.add: bad argument #2: Expected a Color or number, got " + typeof b);
     }
     add(a) {
-        if (!(a instanceof Color)) throw new Error("Color.add: bad argument #1: Expected a Color, got " + typeof a);
-        this[0] += a[0];
-        this[1] += a[1];
-        this[2] += a[2];
+        if (a instanceof Color) {
+            this[0] += a[0];
+            this[1] += a[1];
+            this[2] += a[2];
+        } else if (typeof a === "number") {
+            this[0] += a;
+            this[1] += a;
+            this[2] += a;
+        } else {
+            throw new Error("Color.add: bad argument #1: Expected a Color or number, got " + typeof a);
+        }
     }
 
     static sub(a, b) {
         if (!(a instanceof Color)) throw new Error("Color.sub: bad argument #1: Expected a Color, got " + typeof a);
-        if (!(b instanceof Color)) throw new Error("Color.sub: bad argument #2: Expected a Color, got " + typeof b);
-        return new this(a[0] - b[0], a[1] - b[1], a[2] - b[2], a[3]);
+        if (b instanceof Color) return new this(a[0] - b[0], a[1] - b[1], a[2] - b[2], a[3]);
+        else if (typeof b === "number") return new this(a[0] - b, a[1] - b, a[2] - b, a[3]);
+        else throw new Error("Color.sub: bad argument #2: Expected a Color, got " + typeof b);
     }
     sub(a) {
-        if (!(a instanceof Color)) throw new Error("Color.sub: bad argument #1: Expected a Color, got " + typeof a);
-        this[0] -= a[0];
-        this[1] -= a[1];
-        this[2] -= a[2];
+        if (a instanceof Color) {
+            this[0] -= a[0];
+            this[1] -= a[1];
+            this[2] -= a[2];
+        } else if (typeof a === "number") {
+            this[0] -= a;
+            this[1] -= a;
+            this[2] -= a;
+        } else {
+            throw new Error("Color.sub: bad argument #1: Expected a Color or number, got " + typeof a);
+        }
     }
     
     static mult(a, b) {
         if (!(a instanceof Color)) throw new Error("Color.mult: bad argument #1: Expected a Color, got " + typeof a);
-        if (!(b instanceof Color)) throw new Error("Color.mult: bad argument #2: Expected a Color, got " + typeof b);
-        return new this(a[0] * b[0], a[1] * b[1], a[2] * b[2], a[3]);
+        if (b instanceof Color) return new this(a[0] * b[0], a[1] * b[1], a[2] * b[2], a[3]);
+        else if (typeof b === "number") return new this(a[0] * b, a[1] * b, a[2] *b, a[3]);
+        else throw new Error("Color.mult: bad argument #2: Expected a Color, got " + typeof b);
     }
     mult(a) {
-        if (!(a instanceof Color)) throw new Error("Color.mult: bad argument #1: Expected a Color, got " + typeof a);
-        this[0] *= a[0];
-        this[1] *= a[1];
-        this[2] *= a[2];
+        if (a instanceof Color) {
+            this[0] *= a[0];
+            this[1] *= a[1];
+            this[2] *= a[2];
+        } else if (typeof a === "number") {
+            this[0] *= a;
+            this[1] *= a;
+            this[2] *= a;
+        } else {
+            throw new Error("Color.mult: bad argument #1: Expected a Color or number, got " + typeof a);
+        }
     }
 
     static div(a, b) {
         if (!(a instanceof Color)) throw new Error("Color.div: bad argument #1: Expected a Color, got " + typeof a);
-        if (!(b instanceof Color)) throw new Error("Color.div: bad argument #2: Expected a Color, got " + typeof b);
-        return new this(a[0] / b[0], a[1] / b[1], a[2] / b[2], a[3]);
+        if (b instanceof Color) return new this(a[0] / b[0], a[1] / b[1], a[2] / b[2], a[3]);
+        else if (typeof b === "number") return new this(a[0] / b, a[1] / b, a[2] / b, a[3]);
+        else throw new Error("Color.div: bad argument #2: Expected a Color, got " + typeof b);
     }
     div(a) {
-        if (!(a instanceof Color)) throw new Error("Color.div: bad argument #1: Expected a Color, got " + typeof a);
-        this[0] /= a[0];
-        this[1] /= a[1];
-        this[2] /= a[2];
+        if (a instanceof Color) {
+            this[0] /= a[0];
+            this[1] /= a[1];
+            this[2] /= a[2];
+        } else if (typeof a === "number") {
+            this[0] /= a;
+            this[1] /= a;
+            this[2] /= a;
+        } else {
+            throw new Error("Color.div: bad argument #1: Expected a Color or number, got " + typeof a);
+        }
+    }
+
+    static blend(a, b, mix = 0.5) {
+        if (!(a instanceof Color)) throw new Error("Color.blend: bad argument #1: Expected a Color, got " + typeof a);
+        if (!(b instanceof Color)) throw new Error("Color.blend: bad argument #2: Expected a Color, got " + typeof b);
+        if (typeof mix !== "number") throw new Error("Color.blend: bad argument #3: Expected a number, got " + typeof mix);
+        return new this((a[0] + b[0]) * mix, (a[1] + b[1]) * mix, (a[2] + b[2]) * mix, a[3]);
+    }
+    blend(a, mix = 0.5) {
+        if (!(a instanceof Color)) throw new Error("Color.blend: bad argument #1: Expected a Color, got " + typeof a);
+        if (typeof mix !== "number") throw new Error("Color.blend: bad argument #2: Expected a number, got " + typeof mix);
+        this.add(a);
+        this.mult(mix);
     }
 
     static fromHex = function(hex) {
