@@ -190,6 +190,9 @@ class Color {
         this[3] = alpha;
         this.length = 4; // Allow looping if necessary
     }
+
+    // Getters
+
     get r() {return this[0];}
     get g() {return this[1];}
     get b() {return this[2];}
@@ -203,7 +206,7 @@ class Color {
     get rgba() {return "rgba(" + [this[0], this[1], this[2], this[3]].join(',') + ")";}
     get rgb()  {return "rgb(" + [this[0], this[1], this[2]].join(',') + ")";}
 
-    get hex()  {
+    get hex() {
         let r = this[0].toString(16);
         let g = this[1].toString(16);
         let b = this[2].toString(16);
@@ -215,47 +218,6 @@ class Color {
         if (a.length === 1) a = "0" + a;
 
         return "#" + r + g + b + a;
-    }
-
-    get array()  {return [this[0], this[1], this[2], this[3]];}
-    get object() {return {r: this[0], g: this[1], b: this[2], a: this[3], red: this[0], green: this[1], blue: this[2], alpha: this[3]};}
-    get copy()   {return new this(this[0], this[1], this[2], this[3]);}
-
-    set r(r) {
-        if (typeof r !== "number") throw new Error("The value of red must be a number.");
-        this[0] = r;
-    };
-    set g(g) {
-        if (typeof g !== "number") throw new Error("The value of green must be a number.");
-        this[1] = g;
-    };
-    set b(b) {
-        if (typeof b !== "number") throw new Error("The value of blue must be a number.");
-        this[2] = b;
-    };
-    set a(a) {
-        if (typeof a !== "number") throw new Error("The value of alpha must be a number.");
-        this[3] = a;
-    };
-
-    set red(r)   {this.r = r;}
-    set green(g) {this.g = g;}
-    set blue(b)  {this.b = b;}
-    set alpha(a) {this.a = a;}
-
-    set hex(hex) {  
-        let col = Color.fromHex(hex);
-        this[0] = col[0];
-        this[1] = col[1];
-        this[2] = col[2];
-        this[3] = col[3];
-    }
-
-    set (r, g = r, b = r, a) {
-        if (typeof r === "number") this[0] = r;
-        if (typeof g === "number") this[1] = g;
-        if (typeof b === "number") this[2] = b;
-        if (typeof a === "number") this[3] = a;
     }
 
     get hsl() {
@@ -298,6 +260,105 @@ class Color {
         return [Math.round(H), S, L];
     }
 
+    get h() {return this.hslArray[0];}
+    get s() {return this.hslArray[1];}
+    get l() {return this.hslArray[2];}
+    
+    get hue()        {return this.hslArray[0];}
+    get saturation() {return this.hslArray[1];}
+    get luminance()  {return this.hslArray[2];}
+
+    get array()  {return [this[0], this[1], this[2], this[3]];}
+    get object() {
+        let hsl = this.hslArray;
+        return {r: this[0], g: this[1], b: this[2], a: this[3], red: this[0], green: this[1], blue: this[2], alpha: this[3], h: hsl[0], s: hsl[1], l: hsl[2], hue: hsl[0], saturation: hsl[1], luminance: hsl[2]};
+    }
+    get objectRGBA() {return {r: this[0], g: this[1], b: this[2], a: this[3], red: this[0], green: this[1], blue: this[2], alpha: this[3]};}
+    get objectRGB() {return {r: this[0], g: this[1], b: this[2], red: this[0], green: this[1], blue: this[2]};}
+    get objectHSLA() {
+        let hsl = this.hslArray;
+        return {h: hsl[0], s: hsl[1], l: hsl[2], a: this[3], hue: hsl[0], saturation: hsl[1], luminance: hsl[2], alpha: this[3]};
+    }
+    get objectHSL() {
+        let hsl = this.hslArray;
+        return {h: hsl[0], s: hsl[1], l: hsl[2], hue: hsl[0], saturation: hsl[1], luminance: hsl[2]};
+    }
+    
+    get copy() {return new this.constructor(this[0], this[1], this[2], this[3]);}
+
+    // Setters
+
+    set r(r) {
+        if (typeof r !== "number") throw new Error("The value of red must be a number.");
+        this[0] = r;
+    };
+    set g(g) {
+        if (typeof g !== "number") throw new Error("The value of green must be a number.");
+        this[1] = g;
+    };
+    set b(b) {
+        if (typeof b !== "number") throw new Error("The value of blue must be a number.");
+        this[2] = b;
+    };
+    set a(a) {
+        if (typeof a !== "number") throw new Error("The value of alpha must be a number.");
+        this[3] = a;
+    };
+
+    set red(r)   {this.r = r;}
+    set green(g) {this.g = g;}
+    set blue(b)  {this.b = b;}
+    set alpha(a) {this.a = a;}
+
+    set rgba(ar) {
+        if (!(ar instanceof Array)) throw new Error("You must set the rgba value as an array value.");
+        this.set(...ar);
+    }
+    set rgb(ar) {
+        if (!(ar instanceof Array)) throw new Error("You must set the rgb value as an array value.");
+        this.set(...ar);
+    }
+
+    set hex(hex) {  
+        let col = Color.fromHex(hex);
+        this[0] = col[0];
+        this[1] = col[1];
+        this[2] = col[2];
+        this[3] = col[3];
+    }
+
+    set h(hue) {
+        if (typeof hue !== "number") throw new Error("Can't set the hue to a non-numerical value.");
+        let hsl = this.hslArray;
+        let rgb = this._hslrgbar(hue, hsl[1], hsl[2]);
+        this.set(rgb[0], rgb[1], rgb[2]);
+    }
+    set s(sat) {
+        if (typeof sat !== "number") throw new Error("Can't set the saturation to a non-numerical value.");
+        let hsl = this.hslArray;
+        let rgb = this._hslrgbar(hsl[0], sat, hsl[2]);
+        this.set(rgb[0], rgb[1], rgb[2]);
+    }
+    set l(lum) {
+        if (typeof lum !== "number") throw new Error("Can't set the luminance to a non-numerical value.");
+        let hsl = this.hslArray;
+        let rgb = this._hslrgbar(hsl[0], hsl[1], lum);
+        this.set(rgb[0], rgb[1], rgb[2]);
+    }
+
+    set hue(hue) {this.h = hue;}
+    set saturation(sat) {this.s = sat;}
+    set luminance(lum) {this.l = lum;}
+
+    // Functions 
+
+    set (r, g = r, b = r, a) {
+        if (typeof r === "number") this[0] = r;
+        if (typeof g === "number") this[1] = g;
+        if (typeof b === "number") this[2] = b;
+        if (typeof a === "number") this[3] = a;
+    }
+
     static _testValue(v, t1, t2) {
         // Math of this function is from https://www.niwa.nu/2013/05/math-behind-colorspace-conversions-rgb-hsl/
         if (6 * v < 1) return t2 + (t1 - t2) * 6 * v;
@@ -310,7 +371,10 @@ class Color {
         }
     }
 
-    static hslToRGB(h, s, l) {
+    static _hslrgbar(h, s, l) {
+        if (typeof h !== "number") throw new Error("The hue must be a number.");
+        if (typeof s !== "number") throw new Error("The saturation must be a number.");
+        if (typeof l !== "number") throw new Error("The luminance must be a number.");
         // Math of this function is from https://www.niwa.nu/2013/05/math-behind-colorspace-conversions-rgb-hsl/
         if (s === 0) return new this(Math.round(l * 255));
 
@@ -342,6 +406,11 @@ class Color {
         r = Math.round(r * 255);
         g = Math.round(g * 255);
         b = Math.round(b * 255);
+        return [r, g, b];
+    }
+
+    static hslToRGB(h, s, l) {
+        let [r, g, b] = this._hslrgbar(h, s, l);
         return new this(r, g, b);
     }
 
@@ -632,32 +701,32 @@ class KeyCode {
     static y = 89;
     static z = 90;
 
-    static [65] = 65;
-    static [66] = 66;
-    static [67] = 67;
-    static [68] = 68;
-    static [69] = 69;
-    static [70] = 70;
-    static [71] = 71;
-    static [72] = 72;
-    static [73] = 73;
-    static [74] = 74;
-    static [75] = 75;
-    static [76] = 76;
-    static [77] = 77;
-    static [78] = 78;
-    static [79] = 79;
-    static [80] = 80;
-    static [81] = 81;
-    static [82] = 82;
-    static [83] = 83;
-    static [84] = 84;
-    static [85] = 85;
-    static [86] = 86;
-    static [87] = 87;
-    static [88] = 88;
-    static [89] = 89;
-    static [90] = 90;
+    static [65] = 65; // a
+    static [66] = 66; // b
+    static [67] = 67; // c
+    static [68] = 68; // d
+    static [69] = 69; // e
+    static [70] = 70; // f
+    static [71] = 71; // g
+    static [72] = 72; // h
+    static [73] = 73; // i
+    static [74] = 74; // j
+    static [75] = 75; // k
+    static [76] = 76; // l
+    static [77] = 77; // m
+    static [78] = 78; // n
+    static [79] = 79; // o
+    static [80] = 80; // p
+    static [81] = 81; // q
+    static [82] = 82; // r
+    static [83] = 83; // s
+    static [84] = 84; // t
+    static [85] = 85; // u
+    static [86] = 86; // v
+    static [87] = 87; // w
+    static [88] = 88; // x
+    static [89] = 89; // y
+    static [90] = 90; // z
 
     static Digit0 = 48;
     static Digit1 = 49;
@@ -670,16 +739,16 @@ class KeyCode {
     static Digit8 = 56;
     static Digit9 = 57;
 
-    static [48] = 48;
-    static [49] = 49;
-    static [50] = 50;
-    static [51] = 51;
-    static [52] = 52;
-    static [53] = 53;
-    static [54] = 54;
-    static [55] = 55;
-    static [56] = 56;
-    static [57] = 57;
+    static [48] = 48; // 0
+    static [49] = 49; // 1
+    static [50] = 50; // 2
+    static [51] = 51; // 3
+    static [52] = 52; // 4
+    static [53] = 53; // 5
+    static [54] = 54; // 6
+    static [55] = 55; // 7
+    static [56] = 56; // 8
+    static [57] = 57; // 9
 
     static ['0'] = 48;
     static ['1'] = 49;
@@ -703,16 +772,16 @@ class KeyCode {
     static Numpad8 = 104;
     static Numpad9 = 105;
 
-    static [96] = 96;
-    static [97] = 97;
-    static [98] = 98;
-    static [99] = 99;
-    static [100] = 100;
-    static [101] = 101;
-    static [102] = 102;
-    static [103] = 103;
-    static [104] = 104;
-    static [105] = 105;
+    static [96] = 96;   // 0
+    static [97] = 97;   // 1
+    static [98] = 98;   // 2
+    static [99] = 99;   // 3
+    static [100] = 100; // 4
+    static [101] = 101; // 5
+    static [102] = 102; // 6
+    static [103] = 103; // 7
+    static [104] = 104; // 8
+    static [105] = 105; // 9
 
     static NumpadDecimal  = 110;
     static NumpadAdd      = 107;
@@ -720,26 +789,26 @@ class KeyCode {
     static NumpadMultiply = 106;
     static NumpadDivide   = 111;
 
-    static [110] = 110;
-    static [107] = 107;
-    static [109] = 109;
-    static [106] = 106;
-    static [111] = 111;
+    static [110] = 110; // numDec
+    static [107] = 107; // numAdd
+    static [109] = 109; // numSub
+    static [106] = 106; // numMul
+    static [111] = 111; // numDiv
 
     static ArrowLeft  = 37;
     static ArrowUp    = 38;
     static ArrowRight = 39;
     static ArrowDown  = 40;
 
-    static [37] = 37;
-    static [38] = 38;
-    static [39] = 39;
-    static [40] = 40;
+    static [37] = 37; // arrowleft
+    static [38] = 38; // arrowUp
+    static [39] = 39; // arrowRight
+    static [40] = 40; // arrowDown
 
     static Enter       = 13;
     static NumpadEnter = 13;
     
-    static [13] = 13;
+    static [13] = 13; // enter
 
     static Shift      = 16;
     static ShiftLeft  = "ShiftLeft";
@@ -753,9 +822,9 @@ class KeyCode {
     static AltLeft  = "AltLeft";
     static AltRight = "AltRight";
 
-    static [16] = 16;
-    static [17] = 17;
-    static [18] = 18;
+    static [16] = 16; // shift
+    static [17] = 17; // control
+    static [18] = 18; // alt
 
     static Backspace = 8;
     static Space     = 32;
@@ -771,45 +840,45 @@ class KeyCode {
     static ['[']        = 219;
     static [']']        = 221;
 
-    static [219] = 219;
-    static [221] = 221;
+    static [219] = 219; // [
+    static [221] = 221; // ]
 
     static Equal = 187;
     static Minus = 189;
     static ['='] = 187;
     static ['-'] = 189;
 
-    static [187] = 187
-    static [189] = 189;
+    static [187] = 187; // =
+    static [189] = 189; // -
 
     static Semicolon = 186;
     static Quote     = 222;
     static [';']     = 186;
     static ["'"]     = 222;
 
-    static [186] = 186;
-    static [222] = 222;
+    static [186] = 186; // ;
+    static [222] = 222; // '
 
     static Comma  = 188;
     static Period = 190;
     static [',']  = 188;
     static ['.']  = 190;
 
-    static [188] = 188;
-    static [190] = 190;
+    static [188] = 188; // ,
+    static [190] = 190; // .
 
     static Slash     = 191;
     static Backslash = 220;
     static ['/']     = 191;
     static ['\\']    = 220;
 
-    static [191] = 191;
-    static [220] = 220;
+    static [191] = 191; // /
+    static [220] = 220; // \
 
     static Backquote = 192;
     static ['`']     = 192;
 
-    static [192] = 192;
+    static [192] = 192; // `
 
     static _downKeys = new Map(); // Current keys that are pressed
     static _lastDownKeys = new Map(); // The keys that were pressed in the previous frame (tick)
@@ -837,6 +906,15 @@ class Input {
     static keyPressed(key) {
         if (typeof key !== "string" && typeof key !== "number") throw new Error("KeyCode.keyPressed: Bad argument #1: string or number expected, got " + typeof key);
         if (KeyCode[key]) {
+            // Return if down this frame and not down last frame
+            return KeyCode._downKeys.get(key) && !KeyCode._lastDownKeys.get(key);
+        }
+        return false;
+    }
+
+    static keyReleased(key) {
+        if (typeof key !== "string" && typeof key !== "number") throw new Error("KeyCode.keyReleased: Bad argument #1: string or number expected, got " + typeof key);
+        if (KeyCode[key]) {
             // Return if released this frame and down last frame
             return !KeyCode._downKeys.get(key) && KeyCode._lastDownKeys.get(key);
         }
@@ -850,6 +928,15 @@ class Input {
 
     static mouseButtonPressed(btn) {
         if (typeof btn !== "string" && typeof btn !== "number") throw new Error("MouseCode.mouseButtonPressed: Bad argument #1: string or number expected, got " + typeof btn);
+        if (MouseCode[btn]) {
+            // Return if down this frame and not down last frame
+            return MouseCode._down.get(btn) && !MouseCode._lastDown.get(btn);
+        }
+        return false;
+    }
+
+    static mouseButtonReleased(btn) {
+        if (typeof btn !== "string" && typeof btn !== "number") throw new Error("MouseCode.mouseButtonReleased: Bad argument #1: string or number expected, got " + typeof btn);
         if (MouseCode[btn]) {
             // Return if released this frame and down last frame
             return !MouseCode._down.get(btn) && MouseCode._lastDown.get(btn);
