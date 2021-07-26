@@ -7,7 +7,50 @@
 
 "use strict";
 
-// Some basic functions
+// Adding to the math class. Against norms and not really recommended, 
+// but I feel that all games should have these functions so I made them easy to access
+// so you don't have to.
+
+// lerp, Linear Interpolation
+// -> Used for transitions, used in animations.
+//      Number x: the start number
+//      Number y: the end number
+//      Number p: the progress %; should be a number between 0 and 1
+// -> Returns a number (float format)
+Math.lerp = function(start, end, prog) {
+    if (typeof start !== "number") throw new Error("lerp: bad argument #1: expected a number, got " + typeof start);
+    if (typeof end !== "number") throw new Error("lerp: bad argument #2: expected a number, got " + typeof end);
+    if (typeof prog !== "number") throw new Error("lerp: bad argument #3: expected a number, got " + typeof prog);
+    return start + prog * (end - start);
+}
+
+// clamp
+// -> Used to keep values within a threshold
+//     Number x: the number to clamp
+//     Number min: the minimum allowed value that x must be
+//     Number max: the maximum allowed value for x
+// -> Returns a number between the mix and max based on x
+Math.clamp = function(x, min = 0, max = 1) {
+    if (typeof x !== "number") throw new Error('Math.clamp: bad argument #1: number expected, got ' + typeof x);
+    if (typeof min !== "number") throw new Error('Math.clamp: bad argument #2: number expected, got ' + typeof min);
+    if (typeof max !== "number") throw new Error('Math.clamp: bad argument #3: number expected, got ' + typeof max);
+    return Math.min(Math.max(x, min), max);
+}
+
+// inrange
+// -> Used to check if a number is within a certain value. Sort of like clamp, but returns a boolean instead
+//     Number x: the number to check
+//     Number min: the minimum allowed number of x 
+//     Number max: the maximum allowed number of x
+// -> Returns true or false if x is within the min and max
+Math.inrange = function(x, min, max) {
+    if (typeof x !== "number") throw new Error('Math.inrange: bad argument #1: number expected, got ' + typeof x);
+    if (typeof min !== "number") throw new Error('Math.inrange: bad argument #2: number expected, got ' + typeof min);
+    if (typeof max !== "number") throw new Error('Math.inrange: bad argument #3: number expected, got ' + typeof max);
+    return (x >= min && x <= max);
+}
+
+// Now for essential classes that all entities will use
 
 // Vectors, used for positions and sizes. 
 // Since the usage would be a bit lengthy, please see https://github.com/that1nub/Nubs-Canvas-Game-Framework-2.0/wiki/Class:-Vector
@@ -24,6 +67,10 @@ class Vector {
 
     get w() {return this[0];}
     get h() {return this[1];}
+
+    get magnitude() {
+        return this.distanceFrom(Vector.Origin);
+    }
 
     set x(x) {
         if (typeof x !== "number") throw new Error("The x position must be a number.");
@@ -54,6 +101,12 @@ class Vector {
     get array() {return [this[0], this[1]];}
     get object() {return {x: this[0], y: this[1], w: this[0], h: this[1]};}
 
+    static inrange(v, min, max) {
+        if (!(v instanceof Vector))   throw new Error("Vector.inrange: bad argument #1: epxected a Vector, got " + typeof v);
+        if (!(min instanceof Vector)) throw new Error("Vector.inrange: bad argument #2: epxected a Vector, got " + typeof min);
+        if (!(max instanceof Vector)) throw new Error("Vector.inrange: bad argument #3: epxected a Vector, got " + typeof max);
+        return v.inrange(min, max);
+    }
     inrange(min, max) {
         if (!(min instanceof Vector)) throw new Error("Vector.inrange: bad argument #1: epxected a Vector, got " + typeof min);
         if (!(max instanceof Vector)) throw new Error("Vector.inrange: bad argument #2: epxected a Vector, got " + typeof max);
@@ -62,46 +115,66 @@ class Vector {
 
     static add(a, b) {
         if (!(a instanceof Vector)) throw new Error("Vector.add: bad argument #1: Expected a Vector, got " + typeof a);
-        if (!(b instanceof Vector)) throw new Error("Vector.add: bad argument #2: Expected a Vector, got " + typeof b);
-        return new this(a[0] + b[0], a[1] + b[1]);
+        if (b instanceof Vector) return new this(a[0] + b[0], a[1] + b[1]);
+        else if (typeof b === "number") return new this(a[0] + b, a[1] + b);
+        else throw new Error("Vector.add: bad argument #2: Expected a Vector, got " + typeof b);
     }
     add(a) {
-        if (!(a instanceof Vector)) throw new Error("Vector.add: bad argument #1: Expected a Vector, got " + typeof a);
-        this[0] += a[0];
-        this[1] += a[1];
+        if (a instanceof Vector) {
+            this[0] += a[0];
+            this[1] += a[1];
+        } else if (typeof a === "number") {
+            this[0] += a;
+            this[1] += a;
+        } else throw new Error("Vector.add: bad argument #1: Expected a Vector, got " + typeof a);
     }
 
     static sub(a, b) {
         if (!(a instanceof Vector)) throw new Error("Vector.sub: bad argument #1: Expected a Vector, got " + typeof a);
-        if (!(b instanceof Vector)) throw new Error("Vector.sub: bad argument #2: Expected a Vector, got " + typeof b);
-        return new this(a[0] - b[0], a[1] - b[1]);
+        if (b instanceof Vector) return new this(a[0] - b[0], a[1] - b[1]);
+        else if (typeof b === "number") return new this(a[0] - b, a[1] - b);
+        else throw new Error("Vector.sub: bad argument #2: Expected a Vector, got " + typeof b);
     }
     sub(a) {
-        if (!(a instanceof Vector)) throw new Error("Vector.sub: bad argument #1: Expected a Vector, got " + typeof a);
-        this[0] -= a[0];
-        this[1] -= a[1];
+        if (a instanceof Vector) {
+            this[0] -= a[0];
+            this[1] -= a[1];
+        } else if (typeof a === "number") {
+            this[0] -= a;
+            this[1] -= a;
+        } else throw new Error("Vector.sub: bad argument #1: Expected a Vector, got " + typeof a);
     }
     
     static mult(a, b) {
         if (!(a instanceof Vector)) throw new Error("Vector.mult: bad argument #1: Expected a Vector, got " + typeof a);
-        if (!(b instanceof Vector)) throw new Error("Vector.mult: bad argument #2: Expected a Vector, got " + typeof b);
-        return new this(a[0] * b[0], a[1] * b[1]);
+        if (b instanceof Vector) return new this(a[0] * b[0], a[1] * b[1]);
+        else if (typeof b === "number") return new this(a[0] * b, a[1] * b);
+        else throw new Error("Vector.mult: bad argument #2: Expected a Vector, got " + typeof b);
     }
     mult(a) {
-        if (!(a instanceof Vector)) throw new Error("Vector.mult: bad argument #1: Expected a Vector, got " + typeof a);
-        this[0] *= a[0];
-        this[1] *= a[1];
+        if (a instanceof Vector) {
+            this[0] *= a[0];
+            this[1] *= a[1];
+        } else if (typeof a === "number") {
+            this[0] *= a;
+            this[1] *= a;
+        } else throw new Error("Vector.mult: bad argument #1: Expected a Vector, got " + typeof a);
     }
 
     static div(a, b) {
         if (!(a instanceof Vector)) throw new Error("Vector.div: bad argument #1: Expected a Vector, got " + typeof a);
-        if (!(b instanceof Vector)) throw new Error("Vector.div: bad argument #2: Expected a Vector, got " + typeof b);
-        return new this(a[0] / b[0], a[1] / b[1]);
+        if (b instanceof Vector) return new this(a[0] / b[0], a[1] / b[1]);
+        else if (typeof b === "number") return new this(a[0] / b, a[1] / b);
+        else throw new Error("Vector.div: bad argument #2: Expected a Vector, got " + typeof b);
     }
     div(a) {
-        if (!(a instanceof Vector)) throw new Error("Vector.div: bad argument #1: Expected a Vector, got " + typeof a);
-        this[0] /= a[0];
-        this[1] /= a[1];
+        if (a instanceof Vector) {
+            this[0] /= a[0];
+            this[1] /= a[1];
+        } else if (typeof a === "number") {
+            this[0] /= a;
+            this[1] /= a;
+        } else throw new Error("Vector.div: bad argument #1: Expected a Vector, got " + typeof a);
     }
 
     static distance(a, b) {
@@ -111,11 +184,18 @@ class Vector {
         let y = a[1] - b[1];
         return Math.sqrt(x*x + y*y);
     }
-
-    get magnitude() {
-        return Vector.distance(new Vector(), this);
+    distanceFrom(a) {
+        if (!(a instanceof Vector)) throw new Error("Vector.distance: bad argument #1: Expected a Vector, got " + typeof a);
+        let x = this[0] - a[0];
+        let y = this[1] - a[1];
+        return Math.sqrt(x*x, y*y);
     }
 
+    static dot(a, b) {
+        if (!(a instanceof Vector)) throw new Error("Vector.dot: bad argument #1: Expected a Vector, got " + typeof a);
+        if (!(b instanceof Vector)) throw new Error("Vector.dot: bad argument #2: Expected a Vector, got " + typeof b);
+        return a.dot(b);
+    }
     dot(a) {
         if (!(a instanceof Vector)) throw new Error("Vector.dot: bad argument #1: Expected a Vector, got " + typeof a);
         return this[0] * a[0] + this[1] * a[1];
@@ -154,6 +234,8 @@ class Vector {
             this[1] = (cos * this[1]) - (sin * this[0]);
         }
     }
+
+    static Origin = new this();
 }
 
 // Colors, used for coloring entities.
@@ -184,10 +266,10 @@ class Color {
                 throw new Error("Color: Bad argument #1: Expected a string or number, got " + typeof r);
             break;
         }
-        this[0] = Math.clamp(red, 0, 255);
-        this[1] = Math.clamp(green, 0, 255);
-        this[2] = Math.clamp(blue, 0, 255);
-        this[3] = Math.clamp(alpha, 0, 255);
+        this[0] = red;
+        this[1] = green;
+        this[2] = blue;
+        this[3] = alpha;
         this.length = 4; // Allow looping if necessary
     }
 
@@ -286,23 +368,28 @@ class Color {
     
     get copy() {return new this.constructor(this[0], this[1], this[2], this[3]);}
 
+    get textColor() {
+        if (((this.r*0.2126) + (this.g*0.7152) + (this.b*0.0722)) > 127) return Color.black.copy;
+        return Color.white.copy;
+    }
+
     // Setters
 
     set r(r) {
         if (typeof r !== "number") throw new Error("The value of red must be a number.");
-        this[0] = Math.clamp(r, 0, 255);
+        this[0] = r;
     };
     set g(g) {
         if (typeof g !== "number") throw new Error("The value of green must be a number.");
-        this[1] = Math.clamp(g, 0, 255);
+        this[1] = g;
     };
     set b(b) {
         if (typeof b !== "number") throw new Error("The value of blue must be a number.");
-        this[2] = Math.clamp(b, 0, 255);
+        this[2] = b;
     };
     set a(a) {
         if (typeof a !== "number") throw new Error("The value of alpha must be a number.");
-        this[3] = Math.clamp(a, 0, 255);
+        this[3] = a;
     };
 
     set red(r)   {this.r = r;}
@@ -330,19 +417,19 @@ class Color {
     set h(hue) {
         if (typeof hue !== "number") throw new Error("Can't set the hue to a non-numerical value.");
         let hsl = this.hslArray;
-        let rgb = this._hslrgbar(hue, hsl[1], hsl[2]);
+        let rgb = Color.hslToRGBArray(hue, hsl[1], hsl[2]);
         this.set(rgb[0], rgb[1], rgb[2]);
     }
     set s(sat) {
         if (typeof sat !== "number") throw new Error("Can't set the saturation to a non-numerical value.");
         let hsl = this.hslArray;
-        let rgb = this._hslrgbar(hsl[0], sat, hsl[2]);
+        let rgb = Color.hslToRGBArray(hsl[0], sat, hsl[2]);
         this.set(rgb[0], rgb[1], rgb[2]);
     }
     set l(lum) {
         if (typeof lum !== "number") throw new Error("Can't set the luminance to a non-numerical value.");
         let hsl = this.hslArray;
-        let rgb = this._hslrgbar(hsl[0], hsl[1], lum);
+        let rgb = Color.hslToRGBArray(hsl[0], hsl[1], lum);
         this.set(rgb[0], rgb[1], rgb[2]);
     }
 
@@ -357,7 +444,6 @@ class Color {
         if (typeof g === "number") this[1] = g;
         if (typeof b === "number") this[2] = b;
         if (typeof a === "number") this[3] = a;
-        this._verifybounds();
     }
 
     static _testValue(v, t1, t2) {
@@ -372,7 +458,7 @@ class Color {
         }
     }
 
-    static _hslrgbar(h, s, l) {
+    static hslToRGBArray(h, s, l) {
         if (typeof h !== "number") throw new Error("The hue must be a number.");
         if (typeof s !== "number") throw new Error("The saturation must be a number.");
         if (typeof l !== "number") throw new Error("The luminance must be a number.");
@@ -415,10 +501,6 @@ class Color {
         return [r, g, b];
     }
 
-    static hslToRGB(h, s, l) {
-        return new this(...this._hslrgbar(h, s, l));
-    }
-
     static add(a, b) {
         if (!(a instanceof Color)) throw new Error("Color.add: bad argument #1: Expected a Color, got " + typeof a);
         if (b instanceof Color) return new this(a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3]);
@@ -437,7 +519,6 @@ class Color {
         } else {
             throw new Error("Color.add: bad argument #1: Expected a Color or number, got " + typeof a);
         }
-        this._verifybounds();
     }
 
     static sub(a, b) {
@@ -458,7 +539,6 @@ class Color {
         } else {
             throw new Error("Color.sub: bad argument #1: Expected a Color or number, got " + typeof a);
         }
-        this._verifybounds();
     }
     
     static mult(a, b) {
@@ -479,7 +559,6 @@ class Color {
         } else {
             throw new Error("Color.mult: bad argument #1: Expected a Color or number, got " + typeof a);
         }
-        this._verifybounds();
     }
 
     static div(a, b) {
@@ -498,9 +577,8 @@ class Color {
             this[1] /= a;
             this[2] /= a;
         } else {
-            throw new Error("Color.div: bad argument #1: Expected a Color or number, got " + typeof a);
+            throw new Error("Color.mult: bad argument #1: Expected a Color or number, got " + typeof a);
         }
-        this._verifybounds();
     }
 
     static blend(a, b, mix = 0.5) {
@@ -516,7 +594,7 @@ class Color {
         this.mult(mix);
     }
 
-    static fromHex = function(hex) {
+    static hexToRGBArray(hex) {
         if (typeof hex !== "string") throw new Error("Color.fromHex: Bad argument #1: expected a string hex, got " + typeof hex);
         hex = hex.replace(/#/g, '');
 
@@ -540,18 +618,19 @@ class Color {
             } break;
 
             default: {
-                throw new Error("Color.fromHex: Bad argument #1: Invalid hexadecimal specified.");
+                throw new Error("Color.hextoRGBArray: Bad argument #1: Invalid hexadecimal specified.");
             } break;
         }
 
-        return new this(...out);
+        return out;
     }
 
-    _verifybounds() {
-        this[0] = Math.clamp(this[0], 0, 255);
-        this[1] = Math.clamp(this[1], 0, 255);
-        this[2] = Math.clamp(this[2], 0, 255);
-        this[3] = Math.clamp(this[3], 0, 255);
+    static fromHSL(h, s, l) {
+        return new this(...this.hslToRGBArray(h, s, l));
+    }
+
+    static fromHex = function(hex) {
+        return new this(...this.hexToRGBArray(hex));
     }
 
     // I used a node script to generate this :^)
@@ -942,7 +1021,10 @@ class KeyCode {
     static [192] = 192; // `
 
     static _downKeys = new Map(); // Current keys that are pressed
-    static _lastDownKeys = new Map(); // The keys that were pressed in the previous frame (tick)
+    static _lastDownKeys = new Map(); // The keys that were pressed in the previous frame
+
+    static _downKeysTick = new Map(); // Same as _downKeys, however instead of being done every frame, runs every tick.
+    static _lastDownKeysTick = new Map(); // Same as _lastDownKeys, however instead of being done every frame, runs every tick.
 }
 
 class MouseCode {
@@ -956,9 +1038,14 @@ class MouseCode {
 
     static _down = new Map(); // Current mouse buttons pressed
     static _lastDown = new Map(); // Mouse buttons pressed in the previous frame
+
+    static _downTick = new Map(); // Same as _down, however instead of being done every frame, done every tick
+    static _lastDownTick = new Map(); // Same as _lastDown, however instead of being done every frame, done every tick
 }
 
 class Input {
+    static context = 'key';
+
     static isKeyDown(key) {
         if (typeof key !== "string" && typeof key !== "number") throw new Error("KeyCode.isKeyDown: Bad argument #1: string or number expected, got " + typeof key);
         return KeyCode._downKeys.get(key);
@@ -1006,31 +1093,20 @@ class Input {
     }
 }
 
-// lerp, Linear Interpolation
-// -> Used for transitions, used in animations.
-//      Number x: the start number
-//      Number y: the end number
-//      Number p: the progress %; should be a number between 0 and 1
-// -> Returns a number (float format)
-Math.lerp = function(start, end, prog) {
-    if (typeof start !== "number") throw new Error("lerp: bad argument #1: expected a number, got " + typeof start);
-    if (typeof end !== "number") throw new Error("lerp: bad argument #2: expected a number, got " + typeof end);
-    if (typeof prog !== "number") throw new Error("lerp: bad argument #3: expected a number, got " + typeof prog);
-    return start + prog * (end - start);
-}
+// Render targets, used to draw to separate canvases without clearing a frame (unless you set it to)
+class RenderTarget {
+    constructor(data) {
+        if (typeof data.id !== "string") throw new Error("Can't create a RenderTarget without a string identifier.");
+        
+        let existingTarget = RenderTarget._map.get(data.id);
+        if (existingTarget !== undefined) throw new Error("A RenderTarget already exists with this identifier.");
+        
+        Object.assign(this, data);
 
-Math.clamp = function(x, min = 0, max = 1) {
-    if (typeof x !== "number") throw new Error('Math.clamp: bad argument #1: number expected, got ' + typeof x);
-    if (typeof min !== "number") throw new Error('Math.clamp: bad argument #2: number expected, got ' + typeof min);
-    if (typeof max !== "number") throw new Error('Math.clamp: bad argument #3: number expected, got ' + typeof max);
-    return Math.min(Math.max(x, min), max);
-}
+        if (typeof this.clearFrame !== "boolean") this.clearFrame = false; 
+    }
 
-Math.inrange = function(x, min, max) {
-    if (typeof x !== "number") throw new Error('Math.inrange: bad argument #1: number expected, got ' + typeof x);
-    if (typeof min !== "number") throw new Error('Math.inrange: bad argument #2: number expected, got ' + typeof min);
-    if (typeof max !== "number") throw new Error('Math.inrange: bad argument #3: number expected, got ' + typeof max);
-    return (x >= min && x <= max);
+    static _map = new Map();
 }
 
 // A table that contains all of the essential framework variables
@@ -1043,7 +1119,7 @@ ngf.animations = new Map(); // Map of all running animations
 ngf.canvas = null; // The canvas the mouse is tracked to
 ngf.context = null; // What this framework draws to
 ngf.fps = 60; // 0 is as many frames as possible. Any higher number is the actual FPS. 0 is not recommended, the deltaTime will be incorrect.
-ngf.tickRate = 66; // How many times an entity "thinks" every second
+ngf.tickRate = 115; // How many times entities "think" every second
 ngf.onFrameRender = []; // User defined functions to run every frame
 ngf.clearFrame = true; // Should the frame be cleared before redrawing?
 
@@ -1131,6 +1207,18 @@ function setCanvas(id) {
     ngf.context.lineWidth = 1;
 }
 
+// Constants
+
+// text align x
+const TEXT_ALIGN_LEFT   = 0;
+const TEXT_ALIGN_MIDDLE = 1;
+const TEXT_ALIGN_RIGHT  = 2;
+
+// text align y
+const TEXT_ALIGN_TOP    = 0;
+const TEXT_ALIGN_CENTER = 1;
+const TEXT_ALIGN_BOTTOM = 2;
+
 /*
 
     Tree:
@@ -1157,13 +1245,6 @@ function setCanvas(id) {
         PlayerController
 
 */
-
-// Functions easing animations. Referenced from https://easings.net/
-function easeInOut(value, exponent) {
-    if (typeof value !== "number")    throw new Error("easeIn: Bad argument #1: Expected a number, got " + typeof value);
-    if (typeof exponent !== "number") throw new Error("easeIn: Bad argument #2: Expected a number, got " + typeof exponent);
-    return value < 0.5 ? (2 ** (exponent - 1)) * (value ** exponent) : 1 - ((-2 * value + 2) ** exp) / 2;
-}
 
 // For a complete documentation of all the classes below, see [not yet created]
 
@@ -1206,7 +1287,7 @@ class Graphic extends Entity {
     constructor (data) {
         super();
         this.pos = new Vector(0);
-        this.color = new Color(255);
+        this.color = Color.white.copy;
         this.visible = true;
         this.enabled = true;
         this.drawFromOrigin = false;
@@ -1397,7 +1478,7 @@ class Box extends Graphic {
     }
     
     sizeTo(size, duration = 1000, ease, onFinish) {
-        if (!(size instanceof Vector)) throw new Error("<Graphic>.moveTo: Bad argument #1: Expected a Vector, got " + typeof size);
+        if (!(size instanceof Vector)) throw new Error("Box.sizeTo: Bad argument #1: Expected a Vector, got " + typeof size);
 
         let animX = new Animation();
         let animY = new Animation();
@@ -1457,7 +1538,10 @@ class Button extends Box {
 
         if (typeof this.text !== "string") this.text = "Lorem";
         if (typeof this.font !== "string") this.font = "16px Arial";
-        if (!(this.textColor instanceof Color)) this.textColor = new Color();
+        if (typeof this.textAlignX !== "number") this.textAlignX = TEXT_ALIGN_MIDDLE;
+        if (typeof this.textAlignY !== "number") this.textAlignY = TEXT_ALIGN_CENTER;
+        if (typeof this.alignPadding !== "number") this.alignPadding = 4;
+        if (!(this.textColor instanceof Color)) this.textColor = this.color.textColor;
     }
 
     textColorTo(col, duration = 1000, ease, onFinish) {
@@ -1513,11 +1597,33 @@ class Button extends Box {
         ngf.context.font = this.font;
         ngf.context.fillStyle = this.textColor.rgba;
 
-        // For some reason, measureText only gets the width, so we have to calculate the height by checking the font for a number
-        let wid = ngf.context.measureText(this.text).width;
-        let hei = Number(ngf.context.font.match(/[0-9]+/g)[0]) || 0;
+        // For some reason, measureText only gets the width, so we have to manually calculate the height by getting the bounding box
+        let textMetric = ngf.context.measureText(this.text);
+        let wid = textMetric.width;
 
-        ngf.context.fillText(this.text, (w/2) - wid/2, (h/2) + hei/3);
+        let top = textMetric.actualBoundingBoxAscent; // top y pos of the bounding box
+        let bottom = textMetric.actualBoundingBoxDescent; // bottom y pos of the bounding box
+        let hei = bottom - top;
+        
+        // let hei = Number(ngf.context.font.match(/[0-9]+/g)[0]) || 0;
+
+        let [x, y] = [0, 0];
+
+        // Calculate x pos
+        if (typeof this.textXPosOverride !== "number") {
+            if (this.textAlignX === TEXT_ALIGN_LEFT) x = this.alignPadding;
+            else if (this.textAlignX === TEXT_ALIGN_MIDDLE) x = w/2 - wid/2;
+            else if (this.textAlignX === TEXT_ALIGN_RIGHT) x = w - wid - this.alignPadding;
+        } else x = this.textXPosOverride;
+
+        // Calculate y pos
+        if (typeof this.textYPosOverride !== "number") {
+            if (this.textAlignY === TEXT_ALIGN_TOP) y = this.alignPadding - hei;
+            else if (this.textAlignY === TEXT_ALIGN_CENTER) y = h/2 - hei/2;
+            else if (this.textAlignY === TEXT_ALIGN_BOTTOM) y = h - this.alignPadding;
+        } else y = this.textYPosOverride;
+
+        ngf.context.fillText(this.text, x, y);
     }
 }
 
@@ -1526,13 +1632,27 @@ class CheckBox extends Button {
         super(data);
 
         if (typeof this.style !== "string") this.style = "box";
-        if (!(this.tickColor instanceof Color)) this.tickColor = new Color();
+        if (!(this.checkColor instanceof Color)) this.checkColor = Color.black.copy;
+        if (typeof this.checkPadding !== "number") this.checkPadding = 4;
+        if (typeof this.checked !== "boolean") this.checked = false;
+    }
+
+    onMouseUp() {
+        this.checked = !this.checked;
+        if (this.onChecked instanceof Function) this.onChecked();
     }
 
     draw(w, h) {
+        this.textXPosOverride = h;
         super.draw(w, h);
 
+        let checkSize = h - this.checkPadding * 2;
         
+        ngf.context.fillStyle = this.textColor.rgba;
+        ngf.context.fillRect(this.checkPadding, h/2 - checkSize/2, checkSize, checkSize);
+
+        ngf.context.fillStyle = (this.checked ? this.checkColor : this.color).rgba;
+        ngf.context.fillRect(this.checkPadding + 4, h/2 - checkSize/2 + 4, checkSize - 8, checkSize - 8);
     }
 }
 
@@ -1563,7 +1683,9 @@ class Text extends Graphic {
 
         if (typeof this.text !== "string") this.text = "Lorem";
         if (typeof this.font !== "string") this.font = "16px Arial";
-        if (!(this.textColor instanceof Color)) this.textColor = new Color();
+        if (typeof this.textAlignX !== "number") this.textAlignX = TEXT_ALIGN_MIDDLE;
+        if (typeof this.textAlignY !== "number") this.textAlignY = TEXT_ALIGN_CENTER;
+        if (!(this.textColor instanceof Color)) this.textColor = Color.white.copy;
     }
 
     textColorTo(col, duration = 1000, ease, onFinish) {
@@ -1616,7 +1738,28 @@ class Text extends Graphic {
     draw() {
         ngf.context.font = this.font;
         ngf.context.fillStyle = this.textColor.rgba;
-        ngf.context.fillText(this.text, 0, Number(ngf.context.font.match(/[0-9]+/g)[0]));
+
+        // For some reason, measureText only gets the width, so we have to manually calculate the height by getting the bounding box
+        let textMetric = ngf.context.measureText(this.text);
+        let w = textMetric.width;
+
+        let top = textMetric.actualBoundingBoxAscent; // top y pos of the bounding box
+        let bottom = textMetric.actualBoundingBoxDescent; // bottom y pos of the bounding box
+        let h = bottom - top;
+
+        let [x, y] = [0, 0];
+
+        // Calculate x pos
+        if (this.textAlignX === TEXT_ALIGN_LEFT) x = 0;
+        else if (this.textAlignX === TEXT_ALIGN_MIDDLE) x = -w/2;
+        else if (this.textAlignX === TEXT_ALIGN_RIGHT) x = -w;
+
+        // Calculate y pos
+        if (this.textAlignY === TEXT_ALIGN_TOP) y = -h;
+        else if (this.textAlignY === TEXT_ALIGN_CENTER) y = -h/2;
+        else if (this.textAlignY === TEXT_ALIGN_BOTTOM) y = 0;
+
+        ngf.context.fillText(this.text, x, y);
     }
 }
 
@@ -1756,6 +1899,13 @@ class Animation extends Entity {
         } else console.warn("Attempted to finish an animation that wasn't running.");
     }
 
+    // Functions easing animations. Referenced from https://easings.net/
+    static easeInOut(value, exponent) {
+        if (typeof value !== "number")    throw new Error("Animation.easeInOut: Bad argument #1: Expected a number, got " + typeof value);
+        if (typeof exponent !== "number") throw new Error("Animation.easeInOut: Bad argument #2: Expected a number, got " + typeof exponent);
+        return value < 0.5 ? (2 ** (exponent - 1)) * (value ** exponent) : 1 - ((-2 * value + 2) ** exp) / 2;
+    }
+
     update() {
         if (typeof this.object[this.modifying] !== "number") throw new Error("The modification key is supposed to be assigned to a numerical value.");
 
@@ -1768,7 +1918,7 @@ class Animation extends Entity {
             this.finishAnim();
         }
 
-        let prog = this.ease !== 1 ? easeInOut(this.progress, this.ease) : this.progress;
+        let prog = this.ease !== 1 ? Animation.easeInOut(this.progress, this.ease) : this.progress;
 
         this.object[this.modifying] = Math.lerp(this.start, this.end, prog);
 
@@ -1782,6 +1932,7 @@ ngf.frameRenderIndex = -1;    // Internal, the current index in the measurement 
 ngf.frameRenderTime = [];     // Cache of previous render times
 ngf.deltaTime = 0;            // Calculated at the end of a frame render
 ngf.rawDeltaTime = 0;         // The raw last delta time of the previous frame
+ngf.prevRawDeltaTime = 0;     // The raw last delta time of the previous-previous frame
 
 // Fill the render time so it is constantly the same length
 for (let i = 0; i < ngf.frameRenderTracking; i++) {
@@ -1855,11 +2006,15 @@ function drawFrame() {
         });
     }
 
+    for (let i = 0; i < ngf.onFrameRender.length; i++) {
+        if (ngf.onFrameRender[i] instanceof Function) ngf.onFrameRender[i]();
+    }
+
     let endTime = Date.now();
 
-    ngf.rawDeltaTime = endTime - startTime;
+    ngf.rawDeltaTime = (endTime - startTime) / 1000;
     if (ngf.fps > 0) {
-        ngf.rawDeltaTime += 1000/ngf.fps;
+        ngf.rawDeltaTime += 1/ngf.fps;
     }
 
     ngf.frameRenderIndex++;
@@ -1868,16 +2023,12 @@ function drawFrame() {
     if (ngf.frameRenderIndex >= ngf.frameRenderTracking) ngf.frameRenderIndex = 0;
     
     let sum = 0;
-    for (let i = 0; i < ngf.frameRenderTracking; i++) {
-        sum += ngf.frameRenderTime[i]/1000;
+    for (let i = 0; i <= ngf.frameRenderTracking; i++) {
+        sum += ngf.frameRenderTime[i];
     }
     ngf.deltaTime = sum/ngf.frameRenderTracking;
     
-    ngf.actualFrameRate = Math.floor(1/ngf.deltaTime);
-
-    for (let i = 0; i < ngf.onFrameRender.length; i++) {
-        if (ngf.onFrameRender[i] instanceof Function) ngf.onFrameRender[i]();
-    }
+    ngf.actualFrameRate = Math.floor(1/ngf.rawDeltaTime);
 
     // Update the last down keys to the current down keys
     KeyCode._lastDownKeys.clear();
@@ -1891,11 +2042,11 @@ function drawFrame() {
     }
 
     // Start the next frame
-    let delay = 1000/ngf.fps - ngf.rawDeltaTime;
-    if (ngf.fps > 0 && delay > 0) {
+    ngf.prevRawDeltaTime = 1000/ngf.fps - ngf.rawDeltaTime;
+    if (ngf.fps > 0 && ngf.prevRawDeltaTime > 0) {
         setTimeout(() => {
             requestAnimationFrame(drawFrame);
-        }, delay);
+        }, ngf.prevRawDeltaTime);
     } else requestAnimationFrame(drawFrame);
 }
 requestAnimationFrame(drawFrame);
