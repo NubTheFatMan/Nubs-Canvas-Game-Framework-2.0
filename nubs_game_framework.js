@@ -69,7 +69,11 @@ class Vector {
     get h() {return this[1];}
 
     get magnitude() {
-        return this.distanceFrom(Vector.Origin);
+        return this.distanceFrom(Vector.origin);
+    }
+
+    get slopeFromOrigin() {
+        return Vector.origin.slope(this);
     }
 
     set x(x) {
@@ -188,7 +192,32 @@ class Vector {
         if (!(a instanceof Vector)) throw new Error("Vector.distance: bad argument #1: Expected a Vector, got " + typeof a);
         let x = this[0] - a[0];
         let y = this[1] - a[1];
-        return Math.sqrt(x*x, y*y);
+        return Math.sqrt(x*x + y*y);
+    }
+
+    static angle(a, b) {
+        if (!(a instanceof Vector)) throw new Error("Vector.angle: Bad argument #1: Expected a Vector, got " + typeof a);
+        if (!(b instanceof Vector)) throw new Error("Vector.angle: Bad argument #2: Expected a Vector, got " + typeof b);
+        return a.angle(b)
+    }
+    angle(a) {
+        if (!(a instanceof Vector)) throw new Error("Vector.angle: Bad argument #1: Expected a Vector, got " + typeof a);
+        // Math from https://math.stackexchange.com/a/2587852
+        let x = a.x - this.x;
+        let y = a.y - this.y;
+        return Math.atan2(y, x) * 180 / Math.PI;
+    }
+
+    static slope(a, b) {
+        if (!(a instanceof Vector)) throw new Error("Vector.slope: Bad argument #1: Expected a Vector, got " + typeof a);
+        if (!(b instanceof Vector)) throw new Error("Vector.slope: Bad argument #2: Expected a Vector, got " + typeof b);
+        return a.slope(b);
+    }
+    slope(a) {
+        if (!(a instanceof Vector)) throw new Error("Vector.slope: Bad argument #1: Expected a Vector, got " + typeof a);
+        let rise = a.y - this.y;
+        let run  = a.x - this.x;
+        return rise/run;
     }
 
     static dot(a, b) {
@@ -235,7 +264,7 @@ class Vector {
         }
     }
 
-    static Origin = new this();
+    static origin = new this();
 }
 
 // Colors, used for coloring entities.
@@ -407,7 +436,7 @@ class Color {
     }
 
     set hex(hex) {  
-        let col = Color.fromHex(hex);
+        let col = Color.hexToRGBArray(hex);
         this[0] = col[0];
         this[1] = col[1];
         this[2] = col[2];
@@ -458,10 +487,11 @@ class Color {
         }
     }
 
-    static hslToRGBArray(h, s, l) {
+    static hslToRGBArray(h = 0, s = 1, l = 0.5, a = 255) {
         if (typeof h !== "number") throw new Error("The hue must be a number.");
         if (typeof s !== "number") throw new Error("The saturation must be a number.");
         if (typeof l !== "number") throw new Error("The luminance must be a number.");
+        if (typeof a !== "number") throw new Error("The alpha must be a number.");
 
         h = Math.clamp(h, 0, 360);
         s = Math.clamp(s, 0, 1);
@@ -498,7 +528,7 @@ class Color {
         r = Math.round(r * 255);
         g = Math.round(g * 255);
         b = Math.round(b * 255);
-        return [r, g, b];
+        return [r, g, b, a];
     }
 
     static add(a, b) {
@@ -625,8 +655,8 @@ class Color {
         return out;
     }
 
-    static fromHSL(h, s, l) {
-        return new this(...this.hslToRGBArray(h, s, l));
+    static fromHSL(h = 0, s = 1, l = 0.5, a = 255) {
+        return new this(...this.hslToRGBArray(h, s, l, a));
     }
 
     static fromHex = function(hex) {
